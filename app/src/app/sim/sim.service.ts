@@ -12,6 +12,7 @@ export class SimService {
   private worker: Worker | null = null;
   private cmdId = 0;
   private pending = new Map<number, (r: { ok: boolean; reason: string }) => void>();
+  private pendingSession = new Map<number, (json: string) => void>();
 
   readonly snapshot = signal<Snapshot | null>(null);
   readonly connected = signal(false);
@@ -43,6 +44,14 @@ export class SimService {
           this.snapshot.set(msg.snapshot);
           this.trends.ingest(msg.snapshot);
           break;
+        case 'session': {
+          const cb = this.pendingSession.get(msg.id);
+          if (cb) {
+            this.pendingSession.delete(msg.id);
+            cb(msg.json);
+          }
+          break;
+        }
         case 'command-result': {
           const cb = this.pending.get(msg.id);
           if (cb) {
@@ -107,6 +116,23 @@ export class SimService {
     return new Promise((resolve) => {
       this.pending.set(id, resolve);
       this.send({ type: 'reset', id });
+    });
+  }
+
+  exportSession(): Promise<string> {
+    const id = ++this.cmdId;
+    return new Promise((resolve) => {
+      this.pendingSession.set(id, resolve);
+      this.send({ type: 'export-session', id });
+    });
+  }
+
+  loadSession(json: string): Promise<{ ok: boolean; reason: string }> {
+    const id = ++this.cmdId;
+    this.trends.clear();
+    return new Promise((resolve) => {
+      this.pending.set(id, resolve);
+      this.send({ type: 'load-session', json, id });
     });
   }
 }

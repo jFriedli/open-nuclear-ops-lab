@@ -14,7 +14,8 @@ import { SimService } from '../sim/sim.service';
       <section class="panel">
         <h2>Neutronics</h2>
         <nol-readout label="Neutron power" [value]="h('neutron_power')" units="%" [dp]="1"
-          [deviation]="dev('neutron_power')" [level]="h('neutron_power') > 108 ? 'alarm' : 'normal'" />
+          [deviation]="dev('neutron_power')" [flag]="faultFlag('neutron_power')"
+          [level]="h('neutron_power') > 108 ? 'alarm' : 'normal'" />
         <nol-bar [value]="h('neutron_power')" [min]="0" [max]="120" [markers]="[100, 112]"
           [level]="h('neutron_power') > 108 ? 'alarm' : 'normal'" />
         <nol-readout label="Thermal power" [value]="h('thermal_power')" units="MW" [dp]="0" />

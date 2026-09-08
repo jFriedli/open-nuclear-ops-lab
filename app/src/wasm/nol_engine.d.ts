@@ -9,9 +9,18 @@ export class Engine {
      */
     action(json: string): string;
     /**
+     * Export the current run as a self-contained replayable session (JSON).
+     */
+    export_session(): string;
+    /**
      * Replace the running scenario. Returns a JSON `{ok, reason}`.
      */
     load_scenario(json: string): string;
+    /**
+     * Load a session export and deterministically replay it. Returns
+     * `{ok, reason}` JSON.
+     */
+    load_session(json: string): string;
     /**
      * Create an engine from a scenario JSON string. Pass `"baseline"` (or an
      * empty string) for the default stable full-power scenario.
@@ -43,7 +52,9 @@ export interface InitOutput {
     readonly __wbg_engine_free: (a: number, b: number) => void;
     readonly engine_action: (a: number, b: number, c: number) => [number, number];
     readonly engine_dt: (a: number) => number;
+    readonly engine_export_session: (a: number) => [number, number];
     readonly engine_load_scenario: (a: number, b: number, c: number) => [number, number];
+    readonly engine_load_session: (a: number, b: number, c: number) => [number, number];
     readonly engine_new: (a: number, b: number, c: number) => [number, number, number];
     readonly engine_reset: (a: number) => void;
     readonly engine_set_debug: (a: number, b: number) => void;

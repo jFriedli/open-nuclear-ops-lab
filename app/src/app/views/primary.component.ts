@@ -31,12 +31,13 @@ import { SimService } from '../sim/sim.service';
       <section class="panel">
         <h2>Pressure &amp; pressurizer</h2>
         <nol-readout label="Primary pressure" [value]="h('primary_pressure')" units="MPa" [dp]="2"
-          [deviation]="dev('primary_pressure')"
+          [deviation]="dev('primary_pressure')" [flag]="faultFlag('primary_pressure')"
           [level]="pressLevel()" />
         <nol-bar [value]="h('primary_pressure')" [min]="12" [max]="17" [markers]="[13.2, 15.5, 16.8]"
           [level]="pressLevel()" />
         <nol-readout label="Pressurizer level" [value]="h('pzr_level')" units="%" [dp]="1"
-          [deviation]="dev('pzr_level')" [level]="h('pzr_level') < 25 ? 'alarm' : 'normal'" />
+          [deviation]="dev('pzr_level')" [flag]="faultFlag('pzr_level')"
+          [level]="h('pzr_level') < 25 ? 'alarm' : 'normal'" />
         <nol-bar [value]="h('pzr_level')" [min]="0" [max]="100" [markers]="[15, 55, 85]" />
         <div class="row">
           <span class="dim">Pressurizer control</span>
@@ -105,7 +106,7 @@ import { SimService } from '../sim/sim.service';
 })
 export class PrimaryComponent extends ViewBase {
   private readonly svc = inject(SimService);
-  readonly rcp = computed(() => this.phys()?.rcp ?? this.rcpFromElec());
+  readonly rcp = computed(() => this.snap()?.equipment.rcp ?? this.rcpFromElec());
   readonly ctl = computed(() => this.snap()!.controllers);
   readonly acPower = computed(() => {
     const e = this.snap()?.electrical;

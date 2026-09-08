@@ -25,6 +25,9 @@ const INJECTIONS: { label: string; target: string; action: string; value: number
   { label: 'Primary pressure ch. A stuck', target: 'instrument.primary_pressure.A', action: 'stuck', value: 0, hint: 'instrument' },
   { label: 'Neutron power ch. C fail low', target: 'instrument.neutron_power.C', action: 'fail_low', value: 0, hint: 'instrument' },
   { label: 'External reactivity −150 pcm ramp', target: 'physical.rho_external', action: 'ramp', value: -0.0015, hint: 'process' },
+  { label: 'Signal bias: primary pressure +0.8 MPa', target: 'signal.primary_pressure', action: 'bias', value: 0.8, hint: 'signal' },
+  { label: 'HMI: freeze SG-1 level on screen', target: 'hmi.sg1_level', action: 'stuck', value: 0, hint: 'HMI' },
+  { label: 'HMI: spoof neutron power to 100%', target: 'hmi.neutron_power', action: 'set', value: 100, hint: 'HMI' },
 ];
 
 @Component({
@@ -117,6 +120,19 @@ const INJECTIONS: { label: string; target: string; action: string; value: number
           <button (click)="clearInjections()">Clear all manual injections</button>
         </div>
         @if (injectMsg(); as m) { <p class="dim sm">{{ m }}</p> }
+      </section>
+
+      <section class="panel">
+        <h2>Session record &amp; replay</h2>
+        <p class="dim sm">Every operator command is recorded with its simulation tick. Export a
+          self-contained session (scenario + seed + action tape) and replay it later — the
+          deterministic engine reproduces the run exactly.</p>
+        <div class="row">
+          <button (click)="exportSession()">Export current session</button>
+          <button (click)="replaySession()" [disabled]="!sessionText.trim()">Load &amp; replay session</button>
+        </div>
+        <textarea [(ngModel)]="sessionText" rows="6" placeholder="Session JSON appears here on export; paste one here to replay"></textarea>
+        @if (sessionMsg(); as m) { <p class="sm" [class.err]="!sessionOk()">{{ m }}</p> }
       </section>
 
       <section class="panel">
@@ -218,6 +234,9 @@ export class ScenarioComponent extends ViewBase implements OnInit {
   readonly importMsg = signal('');
   readonly importOk = signal(true);
   importText = '';
+  readonly sessionMsg = signal('');
+  readonly sessionOk = signal(true);
+  sessionText = '';
 
   form: InjectForm = { target: '', action: 'stuck', value: 0, duration: 0 };
 
@@ -297,6 +316,23 @@ export class ScenarioComponent extends ViewBase implements OnInit {
     this.importMsg.set(r.message);
     if (r.ok) await this.persistence.refreshScenarios();
   }
+  async exportSession(): Promise<void> {
+    const json = await this.svc.exportSession();
+    this.sessionText = json;
+    try {
+      await navigator.clipboard.writeText(json);
+      this.sessionMsg.set('Session exported and copied to clipboard.');
+    } catch {
+      this.sessionMsg.set('Session exported to the text box.');
+    }
+    this.sessionOk.set(true);
+  }
+  async replaySession(): Promise<void> {
+    const r = await this.svc.loadSession(this.sessionText);
+    this.sessionOk.set(r.ok);
+    this.sessionMsg.set(r.reason);
+  }
+
   async exportCurrent(): Promise<void> {
     const json = this.currentJson();
     if (!json) return;

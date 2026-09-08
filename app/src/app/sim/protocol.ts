@@ -13,6 +13,8 @@ export type ToWorker =
   | { type: 'clock'; cmd: ClockCommand }
   | { type: 'action'; json: string; id: number }
   | { type: 'load-scenario'; json: string; id: number }
+  | { type: 'load-session'; json: string; id: number }
+  | { type: 'export-session'; id: number }
   | { type: 'reset'; id: number }
   | { type: 'set-debug'; on: boolean }
   | { type: 'request-snapshot' };
@@ -21,7 +23,8 @@ export type FromWorker =
   | { type: 'ready'; dt: number }
   | { type: 'error'; message: string }
   | { type: 'snapshot'; snapshot: Snapshot }
-  | { type: 'command-result'; id: number; ok: boolean; reason: string };
+  | { type: 'command-result'; id: number; ok: boolean; reason: string }
+  | { type: 'session'; id: number; json: string };
 
 /** Fixed publication rate of state snapshots to the UI (Hz). */
 export const SNAPSHOT_HZ = 15;

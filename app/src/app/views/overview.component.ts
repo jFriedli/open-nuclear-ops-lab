@@ -266,11 +266,11 @@ export class OverviewComponent extends ViewBase {
     if (!e) return '—';
     return `${e.edg_a_running ? 'A' : '-'}${e.edg_b_running ? 'B' : '-'}`;
   });
-  readonly mfwOn = computed(() => (this.phys()?.mfw_pump ?? [true, true]).some((x) => x));
-  readonly mfwCount = computed(() => (this.phys()?.mfw_pump ?? [true, true]).filter((x) => x).length);
+  readonly mfwOn = computed(() => (this.snap()?.equipment.mfw_pump ?? [true, true]).some((x) => x));
+  readonly mfwCount = computed(() => (this.snap()?.equipment.mfw_pump ?? [true, true]).filter((x) => x).length);
 
   readonly rcps = computed(() => {
-    const on = this.phys()?.rcp ?? [true, true, true, true];
+    const on = this.snap()?.equipment.rcp ?? [true, true, true, true];
     const pos = [
       { x: 180, y: 300 },
       { x: 180, y: 350 },

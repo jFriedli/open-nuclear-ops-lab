@@ -57,6 +57,58 @@ test('instrument fault produces channel disagreement without a real process excu
   expect(errors).toEqual([]);
 });
 
+test('an HMI-layer fault shows the integrity banner while protection still acts', async ({ page }) => {
+  const errors = errs(page);
+  await page.goto('/');
+  await expect(page.locator('app-csf-strip .csf').first()).toBeVisible({ timeout: 20_000 });
+
+  await page.getByRole('link', { name: 'Scenario / Instructor', exact: true }).click();
+  await page.getByText('HMI Fault — SG-1 Level Frozen On Screen').click();
+  await page.getByRole('button', { name: /START SCENARIO/ }).click();
+  await page.getByRole('button', { name: '10×', exact: true }).click();
+
+  // The indication-integrity banner appears once the HMI fault is active.
+  await expect(page.locator('.integrity-bar')).toBeVisible({ timeout: 20_000 });
+  await expect(page.locator('.integrity-bar')).toContainText('sg1_level');
+
+  // Feedwater is lost too; despite the frozen gauge, the reactor still trips.
+  await page.getByRole('link', { name: 'Reactor', exact: true }).click();
+  await expect(page.getByText('TRIPPED')).toBeVisible({ timeout: 20_000 });
+
+  expect(errors).toEqual([]);
+});
+
+test('a session can be exported and replayed deterministically', async ({ page }) => {
+  const errors = errs(page);
+  await page.goto('/');
+  await expect(page.locator('app-csf-strip .csf').first()).toBeVisible({ timeout: 20_000 });
+  await page.locator('#run-toggle').click();
+  await page.getByRole('button', { name: '10×', exact: true }).click();
+
+  await page.getByRole('link', { name: 'Reactor', exact: true }).click();
+  await page.waitForTimeout(1500);
+  await page.getByRole('button', { name: 'MANUAL REACTOR TRIP' }).click();
+  await expect(page.getByText('TRIPPED')).toBeVisible();
+  await page.waitForTimeout(1500);
+
+  await page.getByRole('link', { name: 'Scenario / Instructor', exact: true }).click();
+  const sessionBox = page.getByPlaceholder(/Session JSON/);
+  await page.getByRole('button', { name: 'Export current session' }).click();
+  await expect.poll(async () => (await sessionBox.inputValue()).length, { timeout: 10_000 }).toBeGreaterThan(50);
+  const sessionJson = await sessionBox.inputValue();
+  expect(sessionJson).toContain('nol-session-v1');
+  expect(sessionJson).toContain('trip_reactor');
+
+  await page.getByRole('button', { name: 'Load & replay session' }).click();
+  await expect(page.locator('.panel .sm', { hasText: /Replayed session/ })).toBeVisible();
+
+  // Replayed state carries the trip.
+  await page.getByRole('link', { name: 'Reactor', exact: true }).click();
+  await expect(page.getByText('TRIPPED')).toBeVisible();
+
+  expect(errors).toEqual([]);
+});
+
 test('trends view records and plots selected variables', async ({ page }) => {
   const errors = errs(page);
   await page.goto('/');

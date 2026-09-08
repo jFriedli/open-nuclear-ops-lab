@@ -42,4 +42,14 @@ test('capture documentation screenshots', async ({ page }) => {
   await page.getByRole('link', { name: 'Safety Functions', exact: true }).click();
   await page.waitForTimeout(500);
   await page.screenshot({ path: `${SHOTS}/safety.png` });
+
+  // HMI-layer fault: the indication-integrity banner + a spoofed gauge.
+  await page.getByRole('link', { name: 'Scenario / Instructor', exact: true }).click();
+  await page.getByText('HMI Fault — SG-1 Level Frozen On Screen').click();
+  await page.getByRole('button', { name: /START SCENARIO/ }).click();
+  await page.getByRole('button', { name: '10×', exact: true }).click();
+  await page.waitForTimeout(7000);
+  await page.getByRole('link', { name: 'Secondary / Turbine', exact: true }).click();
+  await page.waitForTimeout(800);
+  await page.screenshot({ path: `${SHOTS}/hmi-fault.png` });
 });

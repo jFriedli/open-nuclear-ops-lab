@@ -32,6 +32,18 @@
 
   <app-csf-strip />
 
+  @if (hmiFaults().length || signalFaults().length) {
+    <div class="integrity-bar">
+      <span class="blink">⚠ INDICATION INTEGRITY</span>
+      @if (hmiFaults().length) {
+        <span class="grp hmi">HMI display fault: <b>{{ hmiFaults().join(', ') }}</b> — the plant may not match these gauges; cross-check.</span>
+      }
+      @if (signalFaults().length) {
+        <span class="grp sig">Signal-processing fault: <b>{{ signalFaults().join(', ') }}</b> — control &amp; display both affected.</span>
+      }
+    </div>
+  }
+
   @if (sim.error(); as err) {
     <div class="disclaimer" style="margin: 6px 10px">Engine error: {{ err }}</div>
   }

@@ -27,6 +27,8 @@ export class App implements OnInit {
   });
   readonly unacked = computed(() => this.snap()?.alarm_unacked ?? 0);
   readonly debug = computed(() => this.persistence.prefs().debugMode);
+  readonly hmiFaults = computed(() => this.snap()?.hmi_faulted ?? []);
+  readonly signalFaults = computed(() => this.snap()?.signal_faulted ?? []);
 
   readonly nav = [
     { path: 'overview', label: 'Overview' },

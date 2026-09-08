@@ -15,7 +15,7 @@ import { SimService } from '../sim/sim.service';
         <section class="panel">
           <h2>Steam generator {{ k }}</h2>
           <nol-readout label="Level (narrow range)" [value]="h('sg' + k + '_level')" units="%" [dp]="1"
-            [deviation]="dev('sg' + k + '_level')" [level]="sgLevel(k)" />
+            [deviation]="dev('sg' + k + '_level')" [flag]="faultFlag('sg' + k + '_level')" [level]="sgLevel(k)" />
           <nol-bar [value]="h('sg' + k + '_level')" [min]="0" [max]="100" [markers]="[25, 65, 85]" [level]="sgLevel(k)" />
           <nol-readout label="Steam pressure" [value]="h('sg' + k + '_pressure')" units="MPa" [dp]="2" />
           <nol-readout label="Steam flow" [value]="h('sg' + k + '_steam_flow')" units="%" [dp]="1" />
@@ -39,7 +39,7 @@ import { SimService } from '../sim/sim.service';
         }
         <div class="row">
           <span class="dim">Aux feedwater</span>
-          <nol-pill [text]="phys()?.afw_on ? 'RUNNING (auto)' : 'STANDBY'" [cls]="phys()?.afw_on ? 'on' : 'off'" />
+          <nol-pill [text]="afwOn() ? 'RUNNING (auto)' : 'STANDBY'" [cls]="afwOn() ? 'on' : 'off'" />
         </div>
         <div class="row">
           <span class="dim">Feedwater control</span>
@@ -136,7 +136,8 @@ export class SecondaryComponent extends ViewBase {
   readonly ctl = computed(() => this.snap()!.controllers);
   readonly elec = computed(() => this.snap()!.electrical);
   readonly ttrip = computed(() => this.snap()?.controllers.turbine_trip_latched ?? false);
-  readonly mfw = computed(() => this.phys()?.mfw_pump ?? [true, true]);
+  readonly mfw = computed(() => this.snap()?.equipment.mfw_pump ?? [true, true]);
+  readonly afwOn = computed(() => this.snap()?.equipment.afw_on ?? false);
   readonly acPower = computed(() => {
     const e = this.snap()?.electrical;
     return !!e && (e.offsite_power || (e.generator_online && e.generator_mw > 5));

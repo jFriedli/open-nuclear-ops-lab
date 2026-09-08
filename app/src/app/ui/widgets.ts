@@ -8,6 +8,11 @@ type Level = 'normal' | 'warn' | 'alarm';
   template: `
     <div class="ro" [class.warn]="level() === 'warn'" [class.alarm]="level() === 'alarm'">
       <span class="lbl">{{ label() }}</span>
+      @if (flag() === 'hmi') {
+        <span class="flag hmi" title="displayed value altered by an HMI-layer fault — the plant may not match this">⚠ DISP</span>
+      } @else if (flag() === 'signal') {
+        <span class="flag sig" title="signal-processing fault — controller and display both use this value">⚠ SIG</span>
+      }
       <span class="val num">{{ display() }}<em>{{ units() }}</em></span>
       @if (deviation() != null && deviation()! > 0) {
         <span class="dev num" title="max channel disagreement">±{{ deviation()!.toFixed(devDp()) }}</span>
@@ -42,6 +47,19 @@ type Level = 'normal' | 'warn' | 'alarm';
         color: var(--unknown);
         font-size: 10px;
       }
+      .flag {
+        font-family: var(--mono);
+        font-size: 9px;
+        padding: 0 3px;
+        border-radius: 2px;
+        border: 1px solid currentColor;
+      }
+      .flag.hmi {
+        color: var(--alarm);
+      }
+      .flag.sig {
+        color: var(--warn);
+      }
       .warn .val {
         color: var(--warn);
       }
@@ -59,6 +77,7 @@ export class ReadoutComponent {
   dp = input(1);
   deviation = input<number | null>(null);
   level = input<Level>('normal');
+  flag = input<'hmi' | 'signal' | null>(null);
 
   display = computed(() => {
     const v = this.value();

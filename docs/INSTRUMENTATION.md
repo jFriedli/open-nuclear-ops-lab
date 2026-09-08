@@ -59,32 +59,41 @@ instructor / debug mode (the `INSTR` button) is enabled — this sets
 `Engine::set_debug(true)` and the snapshot then includes `physical` and
 `channels`.
 
-## Fault injection points (current and future)
+## Fault injection points
 
-v1 injects at two layers:
-
-- **`physical.*`** — changes the real plant (pump trip, stuck valve, external
-  reactivity, condenser degradation, loss of power).
-- **`instrument.<signal>.<channel>`** — changes one channel's reading without
-  touching the plant.
-
-The layering is deliberately built so future releases can inject at *any*
-level independently:
+Faults can be injected at four distinct levels, each with different downstream
+visibility:
 
 ```
-physical.sg1_level     the actual water level
-   → transmitter        (sensor fault: noise/bias/drift/stuck/fail)
-   → signal processing   (future: scaling / filtering fault)
-   → controller          (future: setpoint / logic tampering)
-   → network             (future: dropped / replayed / spoofed values)
-   → hmi.sg1_level        (future: display-only fault)
+physical.sg1_level     the actual water level  ── changes the plant itself
+   │
+   ▼ transmitter A/B/C   instrument.sg1_level.B  ── one channel: noise / bias /
+   │                                                drift / stuck / fail.
+   │                                                Voting + a disagreement
+   │                                                alarm can expose it.
+   ▼ voted / conditioned value
+   │   signal.sg1_level   ── signal-processing fault: bias / scale / stuck /
+   │                         set on the value that feeds BOTH control and the
+   │                         HMI. Channels still agree — redundancy does NOT
+   │                         catch it; it looks like a real process change.
+   ├─────────────► control / protection / alarms / CSF  (use this value)
+   │
+   ▼ hmi.sg1_level       ── HMI-layer fault: bias / scale / stuck / set on the
+       displayed value ONLY. Control, protection, alarms and the safety-
+       function logic keep working on the true reading. The operator's gauge
+       lies; an instrument technician finds nothing wrong at the sensor.
 ```
 
-A future event could modify **`hmi.sg1_level`** while leaving
-**`physical.sg1_level`** and every transmitter untouched — the operator sees a
-wrong number that no instrument technician can find at the sensor. The
-snapshot already separates `physical`, `channels` (instrument) and `hmi`
-(voted/displayed) precisely so this can be added without reworking the model.
+When an `hmi.*` or `signal.*` fault is active the UI shows a red
+**INDICATION INTEGRITY** banner and marks the affected readouts
+(`⚠ DISP` / `⚠ SIG`). In instructor/debug mode the snapshot also carries
+`hmi_truth` — the un-faulted values — so the discrepancy is visible directly.
+
+Try it: `hmi-spoofed-sg-level.json` freezes the SG-1 level gauge while
+feedwater is lost — the reactor still trips on the true low-low level.
+`signal-bias-pressure.json` biases the processed primary-pressure value high,
+so the pressuriser controller cools the plant down chasing a number that all
+three channels agree on.
 
 **v1 is not a hacking simulator.** The educational objective is first to be
 fluent in telling apart:

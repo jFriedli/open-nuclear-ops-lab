@@ -40,6 +40,14 @@
     "events": 3
   },
   {
+    "file": "hmi-spoofed-sg-level.json",
+    "id": "hmi-spoofed-sg-level",
+    "name": "HMI Fault — SG-1 Level Frozen On Screen",
+    "description": "The displayed SG-1 level is frozen at a normal value while feedwater is lost and the real level falls. The control system and protection use the true reading, so auxiliary feedwater and the low-low level reactor trip still act — but the operator's gauge looks fine until they cross-check other indications.",
+    "initial": "hot_full_power",
+    "events": 3
+  },
+  {
     "file": "station-blackout-partial.json",
     "id": "station-blackout-partial",
     "name": "LOOP With One Diesel Failure",
@@ -108,6 +116,14 @@
     "id": "sg-level-transmitter-drift",
     "name": "SG-1 Level Transmitter Drift (Channel B)",
     "description": "One of three steam generator level channels drifts slowly upward. The feedwater controller (using the voted signal) begins to underfeed SG-1 while channel disagreement grows. The physical level falls even though one indicator looks high.",
+    "initial": "hot_full_power",
+    "events": 1
+  },
+  {
+    "file": "signal-bias-pressure.json",
+    "id": "signal-bias-pressure",
+    "name": "Signal-Processing Fault — Primary Pressure Reads High",
+    "description": "A fault in the primary-pressure signal conditioning adds a steady +0.8 MPa offset to the processed value. Because the same processed value feeds the pressuriser controller and the HMI, the channels still agree and there is no disagreement alarm. The controller cools and depressurises the plant chasing the false reading; true pressure ends up low.",
     "initial": "hot_full_power",
     "events": 1
   },

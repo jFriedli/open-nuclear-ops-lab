@@ -1,0 +1,16 @@
+{
+  "id": "signal-bias-pressure",
+  "name": "Signal-Processing Fault — Primary Pressure Reads High",
+  "description": "A fault in the primary-pressure signal conditioning adds a steady +0.8 MPa offset to the processed value. Because the same processed value feeds the pressuriser controller and the HMI, the channels still agree and there is no disagreement alarm. The controller cools and depressurises the plant chasing the false reading; true pressure ends up low.",
+  "initial": "hot_full_power",
+  "seed": 800802,
+  "briefing": "From t+20 s the indicated primary pressure ramps ~0.8 MPa high over a minute. All three channels agree. Decide whether this is a real pressure rise or an instrument problem, and what the pressuriser controller is doing in response.",
+  "learning_objectives": [
+    "A signal-processing fault is downstream of the sensors, so redundancy does not catch it",
+    "How a control loop can drive the plant away from its target while chasing a biased input",
+    "Using non-electrical evidence (sub-cooling margin, pressuriser level, heater/spray demand) to judge true primary pressure"
+  ],
+  "events": [
+    { "time": 20, "target": "signal.primary_pressure", "action": "bias", "value": 0.8, "duration": 60, "label": "Primary pressure signal bias +0.8 MPa" }
+  ]
+}

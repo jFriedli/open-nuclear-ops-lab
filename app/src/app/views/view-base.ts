@@ -17,6 +17,14 @@ export class ViewBase {
   protected phys(): Snapshot['physical'] {
     return this.snap()?.physical ?? null;
   }
+  /** 'hmi' if the displayed value is spoofed, 'signal' if the processed value is. */
+  protected faultFlag(key: string): 'hmi' | 'signal' | null {
+    const s = this.snap();
+    if (!s) return null;
+    if (s.hmi_faulted?.includes(key)) return 'hmi';
+    if (s.signal_faulted?.includes(key)) return 'signal';
+    return null;
+  }
   protected fmt(v: number, dp = 1): string {
     return Number.isFinite(v) ? v.toFixed(dp) : '--';
   }

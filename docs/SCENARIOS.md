@@ -55,7 +55,9 @@ scale, and remain deterministic.
 | `condenser` | condenser cooling effectiveness | `degrade` (value = target 0..1) |
 | `turbine` | main turbine | `trip` |
 | `reactor` | reactor protection | `trip` |
-| `instrument.<signal>[.<A\|B\|C>]` | an instrument channel | `stuck`, `drift`, `bias`, `noise`, `fail_low`, `fail_high` |
+| `instrument.<signal>[.<A\|B\|C>]` | one raw sensor channel | `stuck`, `drift`, `bias`, `noise`, `fail_low`, `fail_high` |
+| `signal.<signal>` | the voted / processed value feeding **control *and* HMI** | `stuck`, `bias`, `scale`, `set` |
+| `hmi.<signal>` | the **displayed** value only — control, protection, alarms and CSF unaffected | `stuck`, `bias`, `scale`, `set` |
 
 `<signal>` is any key from the HMI list (`neutron_power`, `primary_pressure`,
 `pzr_level`, `t_avg`, `sg1_level`, `sg2_level`, `rod_pos`, …). Omitting the
@@ -102,6 +104,22 @@ Combined:
 | `station-blackout-partial.json` | LOOP + one diesel fails to start |
 | `loss-of-heat-sink.json` | turbine trip → condenser loss → feed loss |
 | `instrument-masked-transient.json` | failed-high level channel + stuck-open relief valve |
+
+Fault-layer demonstrations (see [INSTRUMENTATION.md](./INSTRUMENTATION.md)):
+
+| File | Focus |
+|---|---|
+| `hmi-spoofed-sg-level.json` | HMI-layer fault: frozen gauge while feedwater is lost — automation still acts |
+| `signal-bias-pressure.json` | signal-processing fault: biased value fools controller + display, no channel disagreement |
+
+## Session record & replay
+
+Every operator command is recorded with its simulation tick. From the
+Scenario / Instructor panel you can **Export current session** — a
+self-contained JSON (`nol-session-v1`) with the scenario, seed, and the timed
+action tape — and later **Load & replay** it. Because the engine is
+deterministic and fixed-step, the replay reproduces the run exactly
+(`engine/tests/layers.rs::session_export_and_replay_is_deterministic`).
 
 ## Importing your own
 

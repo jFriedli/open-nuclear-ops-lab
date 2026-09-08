@@ -110,6 +110,29 @@
   padding: 12px;
 }
 
+.integrity-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+  padding: 4px 12px;
+  background: #3a1414;
+  border-bottom: 1px solid var(--alarm);
+  font-size: 11px;
+  color: #ffd9d9;
+}
+.integrity-bar > span:first-child {
+  font-family: var(--mono);
+  font-weight: 700;
+  color: var(--alarm);
+}
+.integrity-bar .grp.sig {
+  color: #f0d69a;
+}
+.integrity-bar b {
+  font-family: var(--mono);
+}
+
 .cmdtoast {
   position: fixed;
   bottom: 16px;

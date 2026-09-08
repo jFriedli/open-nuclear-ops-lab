@@ -23,6 +23,13 @@ export interface ElectricalSummary {
   rcp_powered: boolean;
 }
 
+export interface EquipmentStatus {
+  rcp: [boolean, boolean, boolean, boolean];
+  rcp_running: number;
+  mfw_pump: [boolean, boolean];
+  afw_on: boolean;
+}
+
 export interface Alarm {
   id: string;
   priority: number;
@@ -144,8 +151,15 @@ export interface Snapshot {
   scenario_id: string;
   scenario_name: string;
   hmi: Record<string, number>;
+  /** Signals whose displayed value is altered by an HMI-layer fault. */
+  hmi_faulted: string[];
+  /** Signals altered by a signal-processing-layer fault (control also affected). */
+  signal_faulted: string[];
+  /** True un-faulted HMI values — only present in instructor/debug mode. */
+  hmi_truth: Record<string, number> | null;
   controllers: ControllerState;
   electrical: ElectricalSummary;
+  equipment: EquipmentStatus;
   csf: Csf[];
   alarms: Alarm[];
   alarm_unacked: number;

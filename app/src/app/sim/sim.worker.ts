@@ -120,6 +120,21 @@ self.addEventListener('message', async (ev: MessageEvent<ToWorker>) => {
         publish();
         break;
       }
+      case 'export-session': {
+        if (!engine) return;
+        post({ type: 'session', id: msg.id, json: engine.export_session() });
+        break;
+      }
+      case 'load-session': {
+        if (!engine) return;
+        const res = JSON.parse(engine.load_session(msg.json)) as { ok: boolean; reason: string };
+        running = false;
+        engine.set_running(false);
+        engine.set_speed(speed);
+        post({ type: 'command-result', id: msg.id, ok: res.ok, reason: res.reason });
+        publish();
+        break;
+      }
       case 'set-debug': {
         debug = msg.on;
         engine?.set_debug(debug);

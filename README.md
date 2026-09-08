@@ -27,6 +27,7 @@ control-system failure from an operator error.**
 |---|---|
 | ![Reactor](docs/screenshots/reactor.png) | ![Electrical during a LOOP](docs/screenshots/electrical.png) |
 | ![Alarm console](docs/screenshots/alarms.png) | ![Trends](docs/screenshots/trends.png) |
+| ![HMI-layer fault](docs/screenshots/hmi-fault.png) | ![Critical Safety Functions](docs/screenshots/safety.png) |
 
 ### Highlights
 
@@ -34,10 +35,16 @@ control-system failure from an operator error.**
   Worker at 50 Hz. Six-group point kinetics, temperature feedback, decay heat,
   xenon, a two-loop primary with pressuriser, two steam generators, turbine /
   generator, and a simplified electrical system.
-- **Layered by design:** physical process → instrumentation → control /
-  protection → HMI. A sensor fault and a display fault can drive different
-  internal states while looking similar to the operator. Redundant A/B/C
-  channels with voting and disagreement alarms.
+- **Layered by design:** physical process → instrumentation → signal
+  processing → control / protection → HMI. Faults inject at any level: a raw
+  sensor channel (A/B/C, caught by voting/disagreement), a signal-processing
+  fault (fools control *and* display — redundancy can't catch it), or an
+  **HMI-only fault** (the gauge lies but the plant and its automation don't).
+  A red *indication-integrity* banner and `hmi_truth` in debug mode make the
+  discrepancy visible.
+- **Deterministic session record & replay:** every operator command is taped
+  with its simulation tick; export a self-contained session and replay it to
+  reproduce the run exactly.
 - **Real alarm model** — latched, prioritised, acknowledgeable, filterable,
   with history. Not toast notifications.
 - **Event / scenario engine** as a first-class subsystem: declarative JSON,

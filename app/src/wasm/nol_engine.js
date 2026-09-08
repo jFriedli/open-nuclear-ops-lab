@@ -39,6 +39,22 @@ export class Engine {
         return ret;
     }
     /**
+     * Export the current run as a self-contained replayable session (JSON).
+     * @returns {string}
+     */
+    export_session() {
+        let deferred1_0;
+        let deferred1_1;
+        try {
+            const ret = wasm.engine_export_session(this.__wbg_ptr);
+            deferred1_0 = ret[0];
+            deferred1_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        }
+    }
+    /**
      * Replace the running scenario. Returns a JSON `{ok, reason}`.
      * @param {string} json
      * @returns {string}
@@ -50,6 +66,26 @@ export class Engine {
             const ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
             const len0 = WASM_VECTOR_LEN;
             const ret = wasm.engine_load_scenario(this.__wbg_ptr, ptr0, len0);
+            deferred2_0 = ret[0];
+            deferred2_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+        }
+    }
+    /**
+     * Load a session export and deterministically replay it. Returns
+     * `{ok, reason}` JSON.
+     * @param {string} json
+     * @returns {string}
+     */
+    load_session(json) {
+        let deferred2_0;
+        let deferred2_1;
+        try {
+            const ptr0 = passStringToWasm0(json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+            const len0 = WASM_VECTOR_LEN;
+            const ret = wasm.engine_load_session(this.__wbg_ptr, ptr0, len0);
             deferred2_0 = ret[0];
             deferred2_1 = ret[1];
             return getStringFromWasm0(ret[0], ret[1]);
