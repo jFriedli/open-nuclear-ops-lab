@@ -31,7 +31,7 @@ import { ViewBase } from './view-base';
         <thead><tr><th>Function</th><th>NORMAL</th><th>DEGRADED</th><th>CHALLENGED</th></tr></thead>
         <tbody>
           <tr><td>Reactivity control</td><td>power ≤ 103% or tripped &amp; shut</td><td>power 103–108%</td><td>power &gt; 108% or failed to shut</td></tr>
-          <tr><td>Core heat removal</td><td>flow ≥ 88%, T-avg ≤ 322 °C</td><td>flow &lt; 88% or T-avg &gt; 322 °C</td><td>flow &lt; 40% or T-avg &gt; 335 °C</td></tr>
+          <tr><td>Core heat removal</td><td>flow ≥ 88%, T-avg ≤ 322 °C</td><td>flow &lt; 88% or T-avg &gt; 322 °C</td><td>T-avg &gt; 335 °C, or flow &lt; 20% while T-avg &gt; 315 °C</td></tr>
           <tr><td>Primary inventory</td><td>pzr 25–88%, 14–16.3 MPa</td><td>outside those bands</td><td>pzr &lt; 12% or &lt; 12.5 MPa</td></tr>
           <tr><td>Heat sink</td><td>both SG 35–82%</td><td>a SG outside that band</td><td>a SG &lt; 22%</td></tr>
           <tr><td>Electrical power</td><td>battery ≥ 70%</td><td>battery 30–70%</td><td>battery &lt; 30%</td></tr>
