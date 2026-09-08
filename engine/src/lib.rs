@@ -11,6 +11,7 @@
 
 pub mod alarms;
 pub mod control;
+pub mod faults;
 pub mod instrumentation;
 pub mod physics;
 pub mod rng;
@@ -58,6 +59,13 @@ pub enum OperatorAction {
     ClearInjections,
 }
 
+/// One recorded operator command, for deterministic session replay.
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct TapedAction {
+    pub tick: u64,
+    pub json: String,
+}
+
 pub struct EngineCore {
     phys: PhysicalState,
     instr: Instrumentation,
@@ -68,6 +76,12 @@ pub struct EngineCore {
     manual_events: Vec<ScenarioEvent>,
     manual_time_offset: f64,
     event_log: Vec<EventLogEntry>,
+    /// HMI-layer faults keyed by signal — alter the displayed value only.
+    hmi_faults: std::collections::HashMap<String, faults::LayerFault>,
+    /// Operator action tape (tick + raw JSON) for record/replay.
+    action_tape: Vec<TapedAction>,
+    /// Original scenario JSON, kept so a session export is self-contained.
+    scenario_json: String,
     tick: u64,
     seed: u64,
     debug: bool,
@@ -83,6 +97,8 @@ impl EngineCore {
             op.target_load_pct = 0.0;
             op.generator_connect = false;
         }
+        let scenario_json =
+            serde_json::to_string(&scenario).unwrap_or_else(|_| "\"baseline\"".to_string());
         let mut core = EngineCore {
             phys,
             instr: Instrumentation::new(seed),
@@ -93,6 +109,9 @@ impl EngineCore {
             manual_events: Vec::new(),
             manual_time_offset: 0.0,
             event_log: Vec::new(),
+            hmi_faults: std::collections::HashMap::new(),
+            action_tape: Vec::new(),
+            scenario_json,
             tick: 0,
             seed,
             debug: false,
@@ -126,9 +145,13 @@ impl EngineCore {
 
         // 2. Scenario + manual fault injection.
         let mut sinputs = PhysicsInputs::default();
-        let applied = self
-            .runner
-            .evaluate(now, &self.phys, &mut self.instr, &mut sinputs);
+        let applied = self.runner.evaluate(
+            now,
+            &self.phys,
+            &mut self.instr,
+            &mut sinputs,
+            &mut self.hmi_faults,
+        );
         for a in applied {
             self.event_log.push(EventLogEntry {
                 sim_time: a.sim_time,
@@ -149,7 +172,13 @@ impl EngineCore {
                 learning_objectives: vec![],
             });
             let local = now - self.manual_time_offset;
-            let applied_m = tmp_runner.evaluate(local, &self.phys, &mut self.instr, &mut sinputs);
+            let applied_m = tmp_runner.evaluate(
+                local,
+                &self.phys,
+                &mut self.instr,
+                &mut sinputs,
+                &mut self.hmi_faults,
+            );
             for a in applied_m {
                 self.event_log.push(EventLogEntry {
                     sim_time: now,
@@ -413,7 +442,21 @@ impl EngineCore {
                 ok("Fault injected.")
             }
             OperatorAction::ClearInjections => {
-                self.manual_events.clear();
+                // Undo the effect of each manual injection, then drop them.
+                let events = std::mem::take(&mut self.manual_events);
+                for ev in &events {
+                    let parts: Vec<&str> = ev.target.split('.').collect();
+                    match parts.as_slice() {
+                        ["instrument", rest @ ..] => {
+                            self.instr.apply_fault(&rest.join("."), "clear", 0.0, 0.0)
+                        }
+                        ["signal", key] => self.instr.apply_signal_fault(key, "clear", 0.0),
+                        ["hmi", key] => {
+                            self.hmi_faults.remove(*key);
+                        }
+                        _ => {}
+                    }
+                }
                 self.log(
                     "fault",
                     "[instructor] cleared all manual injections.".into(),
@@ -421,6 +464,63 @@ impl EngineCore {
                 ok("Manual injections cleared.")
             }
         }
+    }
+
+    /// Export a self-contained, replayable session: scenario + seed + the
+    /// timed operator-action tape.
+    pub fn export_session(&self) -> String {
+        let session = serde_json::json!({
+            "format": "nol-session-v1",
+            "scenario": serde_json::from_str::<serde_json::Value>(&self.scenario_json)
+                .unwrap_or(serde_json::Value::String("baseline".into())),
+            "seed": self.seed,
+            "dt": DT,
+            "final_tick": self.tick,
+            "actions": self.action_tape,
+        });
+        serde_json::to_string_pretty(&session).unwrap_or_else(|_| "{}".to_string())
+    }
+
+    /// Rebuild an engine from a session export and deterministically replay the
+    /// recorded actions up to `final_tick`.
+    pub fn replay_session(json: &str) -> Result<EngineCore, String> {
+        let v: serde_json::Value = serde_json::from_str(json).map_err(|e| e.to_string())?;
+        if v.get("format").and_then(|f| f.as_str()) != Some("nol-session-v1") {
+            return Err("not a nol-session-v1 file".into());
+        }
+        let scenario_json = v
+            .get("scenario")
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| "\"baseline\"".into());
+        let scenario = if scenario_json.trim() == "\"baseline\"" {
+            Scenario::stable_baseline()
+        } else {
+            Scenario::parse(&scenario_json)?
+        };
+        let seed = v.get("seed").and_then(|s| s.as_u64());
+        let final_tick = v.get("final_tick").and_then(|t| t.as_u64()).unwrap_or(0);
+        let actions: Vec<TapedAction> = serde_json::from_value(
+            v.get("actions")
+                .cloned()
+                .unwrap_or(serde_json::Value::Array(vec![])),
+        )
+        .map_err(|e| e.to_string())?;
+        if actions.len() > 100_000 || final_tick > 200_000_000 {
+            return Err("session too large".into());
+        }
+
+        let mut core = EngineCore::new(scenario, seed);
+        let mut idx = 0usize;
+        while core.tick < final_tick {
+            while idx < actions.len() && actions[idx].tick <= core.tick {
+                if let Ok(a) = serde_json::from_str::<OperatorAction>(&actions[idx].json) {
+                    core.apply_action(a);
+                }
+                idx += 1;
+            }
+            core.tick_once();
+        }
+        Ok(core)
     }
 
     pub fn load_scenario(&mut self, scenario: Scenario) {
@@ -453,6 +553,7 @@ impl EngineCore {
             &self.controllers.state,
             &self.alarms,
             &self.event_log,
+            &self.hmi_faults,
             self.debug,
         );
         serde_json::to_string(&snap).unwrap_or_else(|_| "{}".to_string())
@@ -521,12 +622,47 @@ impl Engine {
     pub fn action(&mut self, json: &str) -> String {
         match serde_json::from_str::<OperatorAction>(json) {
             Ok(a) => {
+                // Record on the action tape for deterministic session replay.
+                self.core.action_tape.push(TapedAction {
+                    tick: self.core.tick,
+                    json: json.to_string(),
+                });
+                if self.core.action_tape.len() > 100_000 {
+                    self.core.action_tape.remove(0);
+                }
                 let r = self.core.apply_action(a);
                 serde_json::to_string(&r).unwrap()
             }
             Err(e) => serde_json::to_string(&CommandResult {
                 ok: false,
                 reason: format!("Bad action: {e}"),
+            })
+            .unwrap(),
+        }
+    }
+
+    /// Export the current run as a self-contained replayable session (JSON).
+    pub fn export_session(&self) -> String {
+        self.core.export_session()
+    }
+
+    /// Load a session export and deterministically replay it. Returns
+    /// `{ok, reason}` JSON.
+    pub fn load_session(&mut self, json: &str) -> String {
+        match EngineCore::replay_session(json) {
+            Ok(core) => {
+                let t = core.sim_time();
+                self.core = core;
+                self.running = false;
+                serde_json::to_string(&CommandResult {
+                    ok: true,
+                    reason: format!("Replayed session to {t:.0} s."),
+                })
+                .unwrap()
+            }
+            Err(e) => serde_json::to_string(&CommandResult {
+                ok: false,
+                reason: e,
             })
             .unwrap(),
         }

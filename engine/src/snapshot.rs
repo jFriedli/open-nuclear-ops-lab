@@ -154,6 +154,16 @@ pub struct ElectricalSummary {
     pub rcp_powered: bool,
 }
 
+/// Operator-visible plant equipment status (run/standby indications — not
+/// hidden physical truth).
+#[derive(Clone, Debug, Serialize)]
+pub struct EquipmentStatus {
+    pub rcp: [bool; 4],
+    pub rcp_running: u8,
+    pub mfw_pump: [bool; 2],
+    pub afw_on: bool,
+}
+
 #[derive(Clone, Debug, Serialize)]
 pub struct EventLogEntry {
     pub sim_time: f64,
@@ -173,9 +183,18 @@ pub struct Snapshot<'a> {
     /// Measured / displayed values keyed by signal, plus `<key>__dev` for the
     /// channel spread. This is the HMI layer.
     pub hmi: BTreeMap<String, f64>,
+    /// Signals whose displayed value is currently altered by an HMI-layer fault
+    /// (control & protection are unaffected).
+    pub hmi_faulted: Vec<String>,
+    /// Signals altered by a signal-processing-layer fault (control & HMI both
+    /// affected; looks like a real process change).
+    pub signal_faulted: Vec<String>,
+    /// True (un-faulted) HMI values — instructor/debug mode only.
+    pub hmi_truth: Option<BTreeMap<String, f64>>,
 
     pub controllers: &'a ControllerState,
     pub electrical: ElectricalSummary,
+    pub equipment: EquipmentStatus,
     pub csf: Vec<Csf>,
 
     pub alarms: Vec<Alarm>,
@@ -202,34 +221,51 @@ pub fn build_snapshot<'a>(
     controllers: &'a ControllerState,
     alarms: &AlarmManager,
     event_log: &[EventLogEntry],
+    hmi_faults: &std::collections::HashMap<String, crate::faults::LayerFault>,
     debug: bool,
 ) -> Snapshot<'a> {
-    let mut hmi = BTreeMap::new();
+    // True (un-faulted) HMI values straight from the instrument layer.
+    let mut truth_map: BTreeMap<String, f64> = BTreeMap::new();
     for sig in &instr.signals {
-        hmi.insert(sig.key.clone(), round4(sig.value));
+        truth_map.insert(sig.key.clone(), sig.value);
+    }
+    let tg = |k: &str| truth_map.get(k).copied().unwrap_or(0.0);
+    let sg_min = tg("sg1_level").min(tg("sg2_level"));
+    let dt_val = tg("t_hot") - tg("t_cold");
+    truth_map.insert("sg_level_min".into(), sg_min);
+    truth_map.insert("delta_t".into(), dt_val);
+
+    // Apply HMI-layer faults to the *displayed* values only.
+    let mut hmi_faulted: Vec<String> = Vec::new();
+    let mut hmi = BTreeMap::new();
+    for (key, &tv) in &truth_map {
+        let shown = match hmi_faults.get(key) {
+            Some(f) => {
+                hmi_faulted.push(key.clone());
+                f.apply_ref(tv)
+            }
+            None => tv,
+        };
+        hmi.insert(key.clone(), round4(shown));
+    }
+    for sig in &instr.signals {
         hmi.insert(format!("{}__dev", sig.key), round4(sig.max_deviation));
     }
-    // A few derived HMI values.
-    hmi.insert(
-        "sg_level_min".into(),
-        round4(instr.get("sg1_level").min(instr.get("sg2_level"))),
-    );
-    hmi.insert(
-        "delta_t".into(),
-        round4(instr.get("t_hot") - instr.get("t_cold")),
-    );
+    hmi_faulted.sort();
 
+    // The electrical summary readouts follow the (possibly HMI-faulted) values.
+    let shown = |k: &str| hmi.get(k).copied().unwrap_or(0.0);
     let electrical = ElectricalSummary {
         offsite_power: phys.offsite_power,
         grid_available: phys.grid_available,
         generator_online: phys.generator_online,
-        generator_mw: round4(instr.get("generator_mw")),
+        generator_mw: round4(shown("generator_mw")),
         essential_bus_energized: phys.essential_bus_energized,
         edg_a_running: phys.edg_a_running,
         edg_b_running: phys.edg_b_running,
         edg_a_available: phys.edg_a_available,
         edg_b_available: phys.edg_b_available,
-        battery_charge: round4(instr.get("battery_charge")),
+        battery_charge: round4(shown("battery_charge")),
         rcp_powered: phys.rcp.iter().any(|&r| r),
     };
 
@@ -251,8 +287,26 @@ pub fn build_snapshot<'a>(
         scenario_id: scenario_id.to_string(),
         scenario_name: scenario_name.to_string(),
         hmi,
+        hmi_faulted,
+        signal_faulted: instr.signal_faulted(),
+        hmi_truth: if debug {
+            Some(
+                truth_map
+                    .iter()
+                    .map(|(k, v)| (k.clone(), round4(*v)))
+                    .collect(),
+            )
+        } else {
+            None
+        },
         controllers,
         electrical,
+        equipment: EquipmentStatus {
+            rcp: phys.rcp,
+            rcp_running: phys.rcp.iter().filter(|&&r| r).count() as u8,
+            mfw_pump: phys.mfw_pump,
+            afw_on: phys.afw_on,
+        },
         csf: critical_safety_functions(instr, controllers),
         alarms: alarms.active_list(),
         alarm_unacked: alarms.unacked_count(),

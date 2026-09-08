@@ -60,6 +60,14 @@ const SCENARIOS: &[(&str, &str)] = &[
         "masked",
         include_str!("../../scenarios/instrument-masked-transient.json"),
     ),
+    (
+        "hmispoof",
+        include_str!("../../scenarios/hmi-spoofed-sg-level.json"),
+    ),
+    (
+        "sigbias",
+        include_str!("../../scenarios/signal-bias-pressure.json"),
+    ),
 ];
 
 fn finite(v: &Value) -> bool {

@@ -6,6 +6,7 @@
 //! channel disagreement can be modelled and, later, cyber-physical
 //! discrepancies injected here without touching the physical layer.
 
+use crate::faults::{LayerFault, LayerFaultKind};
 use crate::physics::PhysicalState;
 use crate::rng::Rng;
 use serde::Serialize;
@@ -105,6 +106,10 @@ pub struct Instrumentation {
     pub signals: Vec<MeasuredSignal>,
     index: HashMap<String, usize>,
     rng: Rng,
+    /// Signal-processing / conditioning faults, applied to the *voted* value.
+    /// These feed BOTH the control system and the HMI, so they cannot be told
+    /// apart from a real process change by cross-checking channels.
+    processed: HashMap<String, LayerFault>,
 }
 
 fn truth(state: &PhysicalState, source: &str) -> f64 {
@@ -203,6 +208,7 @@ impl Instrumentation {
             signals,
             index,
             rng: Rng::new(seed ^ 0xDEAD_BEEF),
+            processed: HashMap::new(),
         }
     }
 
@@ -213,7 +219,43 @@ impl Instrumentation {
                 ch.update(t, &mut self.rng);
             }
             sig.vote();
+            if let Some(f) = self.processed.get_mut(&sig.key) {
+                sig.value = f.apply(sig.value);
+            }
         }
+    }
+
+    /// Apply / clear a signal-processing-layer fault on the voted value.
+    pub fn apply_signal_fault(&mut self, key: &str, action: &str, value: f64) {
+        if action == "clear" || action == "restore" {
+            self.processed.remove(key);
+            return;
+        }
+        if !self.index.contains_key(key) {
+            return;
+        }
+        if let Some(kind) = LayerFault::parse_kind(action) {
+            let v = if kind == LayerFaultKind::Stuck && value == 0.0 {
+                f64::NAN
+            } else {
+                value
+            };
+            self.processed
+                .entry(key.to_string())
+                .and_modify(|f| {
+                    // keep the latched value if the same kind is re-asserted
+                    if f.kind != kind {
+                        *f = LayerFault::new(kind, v);
+                    }
+                })
+                .or_insert_with(|| LayerFault::new(kind, v));
+        }
+    }
+
+    pub fn signal_faulted(&self) -> Vec<String> {
+        let mut v: Vec<String> = self.processed.keys().cloned().collect();
+        v.sort();
+        v
     }
 
     pub fn get(&self, key: &str) -> f64 {

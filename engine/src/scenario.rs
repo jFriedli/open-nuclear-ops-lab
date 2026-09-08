@@ -6,9 +6,11 @@
 //! tick from simulation time, so it stays deterministic under time-scaling,
 //! pause and single-step.
 
+use crate::faults::LayerFault;
 use crate::instrumentation::Instrumentation;
 use crate::physics::{PhysicalState, PhysicsInputs};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ScenarioEvent {
@@ -160,12 +162,14 @@ impl ScenarioRunner {
     /// Re-evaluate all events for the current simulation time. Mutates
     /// `inputs` (physical overrides) and `instr` (channel faults), and returns
     /// any newly-applied events for the log.
+    #[allow(clippy::too_many_arguments)]
     pub fn evaluate(
         &mut self,
         now: f64,
         state: &PhysicalState,
         instr: &mut Instrumentation,
         inputs: &mut PhysicsInputs,
+        hmi_faults: &mut HashMap<String, LayerFault>,
     ) -> Vec<AppliedEvent> {
         let mut applied = Vec::new();
         let events = self.scenario.events.clone();
@@ -210,7 +214,7 @@ impl ScenarioRunner {
             }
 
             let prog = Self::ramp_progress(ev, now);
-            apply_event(ev, is_active, prog, state, instr, inputs);
+            apply_event(ev, is_active, prog, state, instr, inputs, hmi_faults);
         }
         applied
     }
@@ -238,6 +242,7 @@ fn parse_idx(s: &str) -> Option<usize> {
     s.parse::<usize>().ok()
 }
 
+#[allow(clippy::too_many_arguments)]
 fn apply_event(
     ev: &ScenarioEvent,
     active: bool,
@@ -245,6 +250,7 @@ fn apply_event(
     state: &PhysicalState,
     instr: &mut Instrumentation,
     inputs: &mut PhysicsInputs,
+    hmi_faults: &mut HashMap<String, LayerFault>,
 ) {
     let parts: Vec<&str> = ev.target.split('.').collect();
     match parts.as_slice() {
@@ -336,6 +342,48 @@ fn apply_event(
                 instr.apply_fault(&target, kind, v, ct);
             } else {
                 instr.apply_fault(&target, "clear", 0.0, 0.0);
+            }
+        }
+        // Signal-processing-layer fault: alters the voted value feeding BOTH
+        // control and the HMI. Cannot be caught by cross-channel checks.
+        ["signal", key] => {
+            if active {
+                let v = if ev.action == "bias" {
+                    ev.value * prog
+                } else {
+                    ev.value
+                };
+                instr.apply_signal_fault(key, &ev.action, v);
+            } else {
+                instr.apply_signal_fault(key, "clear", 0.0);
+            }
+        }
+        // HMI-layer fault: alters ONLY the displayed value. Control, protection,
+        // alarms and the safety-function logic keep working on the true reading.
+        ["hmi", key] => {
+            let entry = key.to_string();
+            if active {
+                if let Some(kind) = LayerFault::parse_kind(&ev.action) {
+                    let v = if kind == crate::faults::LayerFaultKind::Stuck && ev.value == 0.0 {
+                        // Latch the current displayed value now (build_snapshot
+                        // applies HMI faults without mutating them).
+                        instr.get(key)
+                    } else if ev.action == "bias" {
+                        ev.value * prog
+                    } else {
+                        ev.value
+                    };
+                    hmi_faults
+                        .entry(entry)
+                        .and_modify(|f| {
+                            if f.kind == crate::faults::LayerFaultKind::Bias {
+                                *f = LayerFault::new(kind, v); // keep ramps live
+                            }
+                        })
+                        .or_insert_with(|| LayerFault::new(kind, v));
+                }
+            } else {
+                hmi_faults.remove(&entry);
             }
         }
         _ => {}
