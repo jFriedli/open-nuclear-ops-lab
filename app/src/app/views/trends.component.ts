@@ -49,7 +49,7 @@ const WINDOWS = [
         <canvas #cv></canvas>
         <div class="legend">
           @for (k of selected(); track k) {
-            <span [style.color]="color(k)">■ {{ label(k) }} — <b class="num">{{ current(k) }}</b> {{ units(k) }}</span>
+            <span [style.color]="color(k)">■ {{ label(k) }} - <b class="num">{{ current(k) }}</b> {{ units(k) }}</span>
           }
         </div>
         <p class="dim sm">History is kept in memory only and is bounded; the oldest samples are
@@ -216,7 +216,7 @@ export class TrendsComponent implements AfterViewInit {
     }
     const { t, values } = this.trends.window(keys, this.windowSec());
     if (t.length < 2) {
-      ctx.fillText('Collecting data — press RUN.', padL + 4, padT + 16);
+      ctx.fillText('Collecting data - press RUN.', padL + 4, padT + 16);
       return;
     }
     const t0 = t[0];

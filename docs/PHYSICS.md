@@ -16,7 +16,7 @@ thermal-hydraulics → secondary → turbine/generator → electrical.
 
 ---
 
-## 1. Neutronics — point kinetics with six delayed groups
+## 1. Neutronics - point kinetics with six delayed groups
 
 Normalised so that `n = 1` is rated fission power. Precursor concentrations
 `Cᵢ` are also normalised.
@@ -53,7 +53,7 @@ Equilibrium precursors used for the initial condition: `Cᵢ = βᵢ / (Λ·λ�
 ρ = ρ_rods + ρ_fuel + ρ_mod + ρ_xenon + ρ_external + ρ_scram + ρ_bias
 ```
 
-* **Rods** — integral worth over the bank travel `x ∈ [0,1]` (1 = withdrawn):
+* **Rods** - integral worth over the bank travel `x ∈ [0,1]` (1 = withdrawn):
   `ρ_rods = ROD_WORTH · (x − sin(2πx)/2π)`, a mild S-curve.
   `ROD_WORTH = 0.028` (2 800 pcm).
 * **`ρ_bias`** is computed once at initialisation so that the hot-full-power
@@ -69,7 +69,7 @@ Both temperature coefficients are negative, giving the model its inherent
 stability: a power rise heats the fuel and coolant, which pushes power back
 down.
 
-## 3. Decay heat — three-group
+## 3. Decay heat - three-group
 
 ```
 dδⱼ/dt = kⱼ·n − λ_δⱼ·δⱼ        decay_heat = Σ δⱼ
@@ -82,7 +82,7 @@ dδⱼ/dt = kⱼ·n − λ_δⱼ·δⱼ        decay_heat = Σ δⱼ
 | 3 | 0.0011 | 1.65e-5 | 0.015 |
 
 Total ≈ **7 %** of rated power at equilibrium. After a trip the fast group
-decays in ~10 s, the slow group over ~15 min — the qualitative shape of a real
+decays in ~10 s, the slow group over ~15 min - the qualitative shape of a real
 decay-heat curve, but a coarse fit, not the ANS standard.
 
 ## 4. Xenon / iodine
@@ -160,7 +160,7 @@ actuated automatically on low level.
 * Condenser backpressure rises as effectiveness degrades and penalises turbine
   output; a high-backpressure turbine trip is modelled.
 
-## 8. Electrical (heavily simplified — not a real topology)
+## 8. Electrical (heavily simplified - not a real topology)
 
 Boolean/first-order model of: off-site grid, main generator, one essential
 bus, two emergency diesel generators (EDG A/B with 3 s / 5 s start timers),
@@ -169,7 +169,7 @@ and a 125 VDC station battery (~4 h endurance, recharges when AC present).
 * Essential bus energised if `generator` OR `off-site` OR `an EDG running`.
 * EDGs auto-start when the bus loses all AC; shed when AC returns.
 * RCPs and main feedwater pumps are powered **only** from off-site power or the
-  main generator — never the diesels. This is what makes "loss of off-site
+  main generator - never the diesels. This is what makes "loss of off-site
   power" force natural circulation.
 
 ## 9. Conservation checks

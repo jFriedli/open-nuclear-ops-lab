@@ -71,7 +71,7 @@ import { SimService } from '../sim/sim.service';
               <tr class="tot"><td>Net</td><td class="num">{{ pcm(p.reactivity) }}</td></tr>
             </tbody>
           </table>
-          <p class="dim sm">Shown because instructor/debug mode is on — this is hidden physical
+          <p class="dim sm">Shown because instructor/debug mode is on - this is hidden physical
             truth. Operators infer reactivity from power rate-of-change and rod position.</p>
         } @else {
           <p class="dim">Enable <strong>INSTR</strong> mode (top bar) to see the reactivity component

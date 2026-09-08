@@ -14,12 +14,12 @@
 ```
 engine/        Rust simulation engine → compiled to WASM
   src/
-    physics.rs         layer 1 — the physical process
-    instrumentation.rs layer 2 — sensors & channels
-    control.rs         layer 3 — controllers + reactor/turbine protection
+    physics.rs         layer 1 - the physical process
+    instrumentation.rs layer 2 - sensors & channels
+    control.rs         layer 3 - controllers + reactor/turbine protection
     alarms.rs          latched alarm model
     scenario.rs        event / scenario engine
-    snapshot.rs        layer 4 — the HMI snapshot + Critical Safety Functions
+    snapshot.rs        layer 4 - the HMI snapshot + Critical Safety Functions
     rng.rs             deterministic PRNG
     lib.rs             wasm-bindgen `Engine`, operator actions, event log
   tests/               physics-validation, scenario & determinism tests
@@ -37,7 +37,7 @@ scenarios/     canonical scenario JSON (copied into app/public at build)
 ## Common tasks
 
 ```bash
-# from repo root — engine
+# from repo root - engine
 cd engine
 cargo test            # unit + physics-validation + scenario regression tests
 cargo clippy --all-targets -- -D warnings
@@ -74,7 +74,7 @@ Angular build or tests.
 ## Adding a scenario
 
 1. Add `scenarios/<name>.json` (see [SCENARIOS.md](./SCENARIOS.md)).
-2. Run `node app/scripts/… ` — actually just re-run the small index builder:
+2. Run `node app/scripts/… ` - actually just re-run the small index builder:
    the `scenarios/index.json` used by the app is regenerated from
    `app/public/scenarios/` at build time; during development copy your file
    into `app/public/scenarios/` and add it to `index.json`, or re-run the

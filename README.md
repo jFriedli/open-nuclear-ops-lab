@@ -18,8 +18,8 @@ PWR-like nuclear power plant**.
 ## What it is
 
 A hands-on way to build intuition about how the pieces of a pressurised-water
-plant fit together — reactor, primary loop, steam generators, turbine,
-condenser, feedwater, and electrical supply — and, above all, to practise
+plant fit together - reactor, primary loop, steam generators, turbine,
+condenser, feedwater, and electrical supply - and, above all, to practise
 **distinguishing a process failure from an instrument failure from a
 control-system failure from an operator error.**
 
@@ -38,14 +38,14 @@ control-system failure from an operator error.**
 - **Layered by design:** physical process → instrumentation → signal
   processing → control / protection → HMI. Faults inject at any level: a raw
   sensor channel (A/B/C, caught by voting/disagreement), a signal-processing
-  fault (fools control *and* display — redundancy can't catch it), or an
+  fault (fools control *and* display - redundancy can't catch it), or an
   **HMI-only fault** (the gauge lies but the plant and its automation don't).
   A red *indication-integrity* banner and `hmi_truth` in debug mode make the
   discrepancy visible.
 - **Deterministic session record & replay:** every operator command is taped
   with its simulation tick; export a self-contained session and replay it to
   reproduce the run exactly.
-- **Real alarm model** — latched, prioritised, acknowledgeable, filterable,
+- **Real alarm model** - latched, prioritised, acknowledgeable, filterable,
   with history. Not toast notifications.
 - **Event / scenario engine** as a first-class subsystem: declarative JSON,
   12 single-fault + 3 combined scenarios, plus an instructor fault-injection
@@ -91,7 +91,7 @@ More in [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md).
 |---|---|
 | [ARCHITECTURE.md](ARCHITECTURE.md) | system design, the four layers, the clock |
 | [docs/PHYSICS.md](docs/PHYSICS.md) | every equation and constant, with the numbers used |
-| [docs/MODEL_LIMITATIONS.md](docs/MODEL_LIMITATIONS.md) | what the model does *not* do — read this |
+| [docs/MODEL_LIMITATIONS.md](docs/MODEL_LIMITATIONS.md) | what the model does *not* do - read this |
 | [docs/SCENARIOS.md](docs/SCENARIOS.md) | scenario JSON format, target/action vocabulary, the shipped set |
 | [docs/INSTRUMENTATION.md](docs/INSTRUMENTATION.md) | the layered architecture and the future fault-injection points |
 | [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | prerequisites, layout, common tasks |

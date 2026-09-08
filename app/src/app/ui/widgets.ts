@@ -9,9 +9,9 @@ type Level = 'normal' | 'warn' | 'alarm';
     <div class="ro" [class.warn]="level() === 'warn'" [class.alarm]="level() === 'alarm'">
       <span class="lbl">{{ label() }}</span>
       @if (flag() === 'hmi') {
-        <span class="flag hmi" title="displayed value altered by an HMI-layer fault — the plant may not match this">⚠ DISP</span>
+        <span class="flag hmi" title="displayed value altered by an HMI-layer fault - the plant may not match this">⚠ DISP</span>
       } @else if (flag() === 'signal') {
-        <span class="flag sig" title="signal-processing fault — controller and display both use this value">⚠ SIG</span>
+        <span class="flag sig" title="signal-processing fault - controller and display both use this value">⚠ SIG</span>
       }
       <span class="val num">{{ display() }}<em>{{ units() }}</em></span>
       @if (deviation() != null && deviation()! > 0) {

@@ -1,12 +1,12 @@
 {
   "id": "hmi-spoofed-sg-level",
-  "name": "HMI Fault — SG-1 Level Frozen On Screen",
-  "description": "The displayed SG-1 level is frozen at a normal value while feedwater is lost and the real level falls. The control system and protection use the true reading, so auxiliary feedwater and the low-low level reactor trip still act — but the operator's gauge looks fine until they cross-check other indications.",
+  "name": "HMI Fault - SG-1 Level Frozen On Screen",
+  "description": "The displayed SG-1 level is frozen at a normal value while feedwater is lost and the real level falls. The control system and protection use the true reading, so auxiliary feedwater and the low-low level reactor trip still act - but the operator's gauge looks fine until they cross-check other indications.",
   "initial": "hot_full_power",
   "seed": 700701,
   "briefing": "From t+30 s the SG-1 level indication is stuck at ~65%. Shortly after, both feedwater pumps trip. Do NOT trust the frozen gauge: use SG-2, feed/steam flow mismatch, steam pressure and the alarm/CSF panels to work out the real situation.",
   "learning_objectives": [
-    "An HMI-layer fault changes only what the operator sees — not the plant or its automation",
+    "An HMI-layer fault changes only what the operator sees - not the plant or its automation",
     "Cross-checking a suspect indication against independent parameters",
     "Recognising that alarms and safety-function status can contradict a gauge, and why the gauge is the one that is wrong"
   ],

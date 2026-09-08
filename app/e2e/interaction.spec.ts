@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { open } from './_setup';
 
 const errs = (page: Page) => {
   const e: string[] = [];
@@ -9,13 +10,13 @@ const errs = (page: Page) => {
 
 test('interlocks reject illegal commands with an explanation', async ({ page }) => {
   const errors = errs(page);
-  await page.goto('/');
+  await open(page);
   await expect(page.locator('app-csf-strip .csf').first()).toBeVisible({ timeout: 20_000 });
   // Keep the clock paused so plant state is frozen at full power for the test.
 
   await page.getByRole('link', { name: 'Reactor', exact: true }).click();
   await page.getByRole('button', { name: 'MANUAL REACTOR TRIP' }).click();
-  await expect(page.getByText('TRIPPED')).toBeVisible();
+  await expect(page.getByText('TRIPPED', { exact: true })).toBeVisible();
 
   // Immediately trying to reset the trip must be rejected (parameters not yet in band)…
   await page.getByRole('button', { name: 'RESET TRIP' }).click();
@@ -33,7 +34,7 @@ test('instrument fault produces channel disagreement without a real process excu
   page,
 }) => {
   const errors = errs(page);
-  await page.goto('/');
+  await open(page);
   await expect(page.locator('app-csf-strip .csf').first()).toBeVisible({ timeout: 20_000 });
 
   await page.getByRole('link', { name: 'Scenario / Instructor', exact: true }).click();
@@ -46,7 +47,7 @@ test('instrument fault produces channel disagreement without a real process excu
 
   // The plant itself stays healthy: no reactor trip.
   await page.getByRole('link', { name: 'Reactor', exact: true }).click();
-  await expect(page.getByText('TRIPPED')).toHaveCount(0);
+  await expect(page.getByText('TRIPPED', { exact: true })).toHaveCount(0);
 
   // But an instrument alarm should be present.
   await page.getByRole('link', { name: 'Alarms', exact: true }).click();
@@ -59,11 +60,11 @@ test('instrument fault produces channel disagreement without a real process excu
 
 test('an HMI-layer fault shows the integrity banner while protection still acts', async ({ page }) => {
   const errors = errs(page);
-  await page.goto('/');
+  await open(page);
   await expect(page.locator('app-csf-strip .csf').first()).toBeVisible({ timeout: 20_000 });
 
   await page.getByRole('link', { name: 'Scenario / Instructor', exact: true }).click();
-  await page.getByText('HMI Fault — SG-1 Level Frozen On Screen').click();
+  await page.getByText('HMI Fault - SG-1 Level Frozen On Screen').click();
   await page.getByRole('button', { name: /START SCENARIO/ }).click();
   await page.getByRole('button', { name: '10×', exact: true }).click();
 
@@ -73,14 +74,14 @@ test('an HMI-layer fault shows the integrity banner while protection still acts'
 
   // Feedwater is lost too; despite the frozen gauge, the reactor still trips.
   await page.getByRole('link', { name: 'Reactor', exact: true }).click();
-  await expect(page.getByText('TRIPPED')).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText('TRIPPED', { exact: true })).toBeVisible({ timeout: 20_000 });
 
   expect(errors).toEqual([]);
 });
 
 test('a session can be exported and replayed deterministically', async ({ page }) => {
   const errors = errs(page);
-  await page.goto('/');
+  await open(page);
   await expect(page.locator('app-csf-strip .csf').first()).toBeVisible({ timeout: 20_000 });
   await page.locator('#run-toggle').click();
   await page.getByRole('button', { name: '10×', exact: true }).click();
@@ -88,7 +89,7 @@ test('a session can be exported and replayed deterministically', async ({ page }
   await page.getByRole('link', { name: 'Reactor', exact: true }).click();
   await page.waitForTimeout(1500);
   await page.getByRole('button', { name: 'MANUAL REACTOR TRIP' }).click();
-  await expect(page.getByText('TRIPPED')).toBeVisible();
+  await expect(page.getByText('TRIPPED', { exact: true })).toBeVisible();
   await page.waitForTimeout(1500);
 
   await page.getByRole('link', { name: 'Scenario / Instructor', exact: true }).click();
@@ -104,14 +105,14 @@ test('a session can be exported and replayed deterministically', async ({ page }
 
   // Replayed state carries the trip.
   await page.getByRole('link', { name: 'Reactor', exact: true }).click();
-  await expect(page.getByText('TRIPPED')).toBeVisible();
+  await expect(page.getByText('TRIPPED', { exact: true })).toBeVisible();
 
   expect(errors).toEqual([]);
 });
 
 test('trends view records and plots selected variables', async ({ page }) => {
   const errors = errs(page);
-  await page.goto('/');
+  await open(page);
   await expect(page.locator('app-csf-strip .csf').first()).toBeVisible({ timeout: 20_000 });
   await page.locator('#run-toggle').click();
   await page.getByRole('button', { name: '5×', exact: true }).click();

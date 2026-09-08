@@ -12,7 +12,7 @@ make it a better *teaching* tool are very welcome.
    operating procedures, real plant parameters, access details, or copyrighted
    training content. Explanations must be written from public-domain / general
    engineering knowledge.
-3. **Keep the layers clean.** Physical process, instrumentation, control, HMI —
+3. **Keep the layers clean.** Physical process, instrumentation, control, HMI -
    don't shortcut between them. Faults are scenario events, not component code.
 4. **Determinism is non-negotiable.** `cd engine && cargo test` must stay
    green, including the determinism and pause/single-step tests.

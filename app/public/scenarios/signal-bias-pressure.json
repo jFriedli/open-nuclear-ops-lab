@@ -1,6 +1,6 @@
 {
   "id": "signal-bias-pressure",
-  "name": "Signal-Processing Fault — Primary Pressure Reads High",
+  "name": "Signal-Processing Fault - Primary Pressure Reads High",
   "description": "A fault in the primary-pressure signal conditioning adds a steady +0.8 MPa offset to the processed value. Because the same processed value feeds the pressuriser controller and the HMI, the channels still agree and there is no disagreement alarm. The controller cools and depressurises the plant chasing the false reading; true pressure ends up low.",
   "initial": "hot_full_power",
   "seed": 800802,

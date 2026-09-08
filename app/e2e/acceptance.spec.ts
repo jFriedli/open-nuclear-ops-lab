@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { open } from './_setup';
 
 // Mirrors the project's "final acceptance scenario", driven through the real UI
 // against the production build.
@@ -23,9 +24,9 @@ test('loads, runs a stable plant, then a LOOP scenario with correct protective a
 }) => {
   const errors = noConsoleErrors(page);
 
-  await page.goto('/');
+  await open(page);
   // 1-2: app + engine load, plant starts stable
-  await expect(page.locator('.brand strong')).toHaveText('OPEN NUCLEAR OPS LAB');
+  await expect(page.locator('.brand strong')).toHaveText('NUCLEAR OPS LAB');
   await expect(page.locator('app-csf-strip .csf').first()).toBeVisible({ timeout: 20_000 });
 
   // Overview mimic renders
@@ -55,7 +56,7 @@ test('loads, runs a stable plant, then a LOOP scenario with correct protective a
   await page.getByText('Loss of Off-Site Power (LOOP)').click();
   await page.getByRole('button', { name: /START SCENARIO/ }).click();
   await expect(page.locator('.panel .dim.sm', { hasText: /Loaded/ })).toBeVisible();
-  await expect(page.locator('#run-toggle')).toContainText('PAUSE');
+  await expect(page.locator('#run-toggle')).toContainText('Pause');
 
   await page.getByRole('button', { name: '10×', exact: true }).click();
 
@@ -69,7 +70,7 @@ test('loads, runs a stable plant, then a LOOP scenario with correct protective a
   await expect(page.getByText(/RUNNING/).first()).toBeVisible(); // a diesel
 
   await page.getByRole('link', { name: 'Reactor', exact: true }).click();
-  await expect(page.getByText('TRIPPED')).toBeVisible();
+  await expect(page.getByText('TRIPPED', { exact: true })).toBeVisible();
   // fission power has collapsed
   const npwr = parseFloat(
     (await page.locator('nol-readout', { hasText: 'Neutron power' }).locator('.val').first().textContent()) ?? '99',
@@ -85,7 +86,7 @@ test('loads, runs a stable plant, then a LOOP scenario with correct protective a
   // 9: acknowledge alarms
   await page.getByRole('link', { name: 'Alarms', exact: true }).click();
   await page.getByRole('button', { name: 'ACK ALL VISIBLE' }).click();
-  await expect(page.locator('.alarmpill')).toContainText('0 UNACK');
+  await expect(page.locator('.alarmpill')).not.toHaveClass(/hot/);
 
   // 10: event timeline recorded the trips
   await page.getByRole('link', { name: 'Event Log', exact: true }).click();
@@ -93,15 +94,15 @@ test('loads, runs a stable plant, then a LOOP scenario with correct protective a
   await expect(page.locator('tbody', { hasText: 'REACTOR_TRIP' })).toBeVisible();
 
   // 11: pause and inspect
-  await expect(page.locator('#run-toggle')).toContainText('PAUSE');
+  await expect(page.locator('#run-toggle')).toContainText('Pause');
   await page.locator('#run-toggle').click();
-  await expect(page.locator('#run-toggle')).toContainText('RUN');
+  await expect(page.locator('#run-toggle')).toContainText('Run');
   const t1 = await simClock(page);
   await page.waitForTimeout(1500);
   expect(await simClock(page)).toBe(t1);
 
   // 12: reset / start another scenario
-  await page.getByRole('button', { name: 'RESET', exact: true }).click();
+  await page.getByRole('button', { name: 'Reset', exact: true }).click();
   await expect.poll(async () => simClock(page), { timeout: 10_000 }).toBeLessThan(5);
 
   expect(errors, `console errors:\n${errors.join('\n')}`).toEqual([]);

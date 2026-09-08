@@ -39,7 +39,7 @@ import { ViewBase } from './view-base';
         </tbody>
       </table>
       <p class="dim sm">UNKNOWN appears when redundant instrument channels disagree enough that the
-        true state cannot be confirmed from the HMI — the point being that you cannot manage a
+        true state cannot be confirmed from the HMI - the point being that you cannot manage a
         safety function you cannot measure.</p>
     </div>
   `,
@@ -83,13 +83,13 @@ export class SafetyComponent extends ViewBase {
   readonly csf = computed(() => this.snap()?.csf ?? []);
   private readonly notes: Record<string, string> = {
     'REACTIVITY CONTROL':
-      'Is the fission chain reaction controlled and can it be shut down? Watch neutron power, its rate of change, rod position and — after a trip — that power has actually collapsed.',
+      'Is the fission chain reaction controlled and can it be shut down? Watch neutron power, its rate of change, rod position and - after a trip - that power has actually collapsed.',
     'CORE HEAT REMOVAL':
       'Is heat being carried away from the fuel? Needs coolant flow (pumps or natural circulation) and an acceptable core outlet temperature. Loss here is the most urgent problem after shutdown.',
     'PRIMARY INVENTORY':
       'Is there enough water in the reactor coolant system, at the right pressure, to keep the core covered and sub-cooled? Pressurizer level and primary pressure are the key indications.',
     'HEAT SINK':
-      'Somewhere for the primary heat to go — normally the steam generators fed by feedwater, rejecting steam to the turbine, condenser, or atmosphere. Low SG level threatens this function.',
+      'Somewhere for the primary heat to go - normally the steam generators fed by feedwater, rejecting steam to the turbine, condenser, or atmosphere. Low SG level threatens this function.',
     'ELECTRICAL POWER':
       'Power for pumps, valves, instrumentation and control. Off-site supply, the main generator, emergency diesels, and finally the station battery form the defence in depth.',
     'CONTAINMENT / BARRIER STATUS':

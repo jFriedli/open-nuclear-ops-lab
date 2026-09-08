@@ -7,6 +7,12 @@ import { Injectable, signal } from '@angular/core';
  */
 export interface Preferences {
   debugMode: boolean;
+  beginnerMode: boolean;
+  /** Seen the welcome screen at least once. */
+  onboarded: boolean;
+  /** Lesson ids the user has completed. */
+  lessonsDone: string[];
+  confirmCritical: boolean;
   defaultSpeed: number;
   lastScenarioFile: string | null;
   trendVars: string[];
@@ -16,6 +22,10 @@ export interface Preferences {
 
 const DEFAULT_PREFS: Preferences = {
   debugMode: false,
+  beginnerMode: true,
+  onboarded: false,
+  lessonsDone: [],
+  confirmCritical: true,
   defaultSpeed: 1,
   lastScenarioFile: null,
   trendVars: ['neutron_power', 't_avg', 'primary_pressure', 'sg1_level'],

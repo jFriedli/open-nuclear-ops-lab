@@ -41,10 +41,10 @@ See [docs/INSTRUMENTATION.md](./docs/INSTRUMENTATION.md) for detail.
 | Physical process | `engine/src/physics.rs` | true plant state, lumped-parameter ODEs, fixed 0.02 s step |
 | Instrumentation | `engine/src/instrumentation.rs` | per-channel noise / bias / drift / stuck / fail; A/B/C voting |
 | Signal processing | `engine/src/instrumentation.rs` + `faults.rs` | post-vote conditioning faults (`signal.*`) that feed both control and HMI |
-| Control & protection | `engine/src/control.rs` | PI-ish controllers, reactor & turbine trip logic — **reads measured values only** |
+| Control & protection | `engine/src/control.rs` | PI-ish controllers, reactor & turbine trip logic - **reads measured values only** |
 | HMI | `engine/src/snapshot.rs` + `faults.rs` | the single snapshot the operator/UI sees; `hmi.*` display-only faults; Critical Safety Functions derived from multiple signals |
 
-Faults can be injected at any of these levels independently — see
+Faults can be injected at any of these levels independently - see
 [docs/INSTRUMENTATION.md](./docs/INSTRUMENTATION.md). An `hmi.*` fault changes
 only what the operator sees; control, protection, alarms and the safety-
 function logic keep acting on the true reading.
@@ -80,12 +80,12 @@ compelling reason to deviate, so we didn't.
 
 ## Persistence
 
-- **localStorage** — preferences (debug mode, default speed, trend selection
+- **localStorage** - preferences (debug mode, default speed, trend selection
   and window, last scenario).
-- **IndexedDB** — user-imported / custom scenarios (larger, and untrusted, so
+- **IndexedDB** - user-imported / custom scenarios (larger, and untrusted, so
   validated on the way in).
 - Trend history is an in-memory column-oriented ring buffer (bounded, oldest
-  samples decimated) — never persisted.
+  samples decimated) - never persisted.
 
 ## Deployment
 

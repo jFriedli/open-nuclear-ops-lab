@@ -155,7 +155,7 @@ export interface Snapshot {
   hmi_faulted: string[];
   /** Signals altered by a signal-processing-layer fault (control also affected). */
   signal_faulted: string[];
-  /** True un-faulted HMI values — only present in instructor/debug mode. */
+  /** True un-faulted HMI values - only present in instructor/debug mode. */
   hmi_truth: Record<string, number> | null;
   controllers: ControllerState;
   electrical: ElectricalSummary;

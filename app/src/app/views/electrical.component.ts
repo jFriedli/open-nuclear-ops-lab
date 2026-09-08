@@ -64,7 +64,7 @@ import { MiniTrendComponent } from '../ui/mini-trend.component';
           study a loss of power: off-site supply, the main generator, one essential bus, two
           emergency diesel generators and a station battery.</p>
         <p class="dim">In this model the reactor coolant pumps and main feedwater pumps are powered
-          only from off-site power or the running main generator — never from the diesels. The
+          only from off-site power or the running main generator - never from the diesels. The
           diesels carry the essential bus (safety loads, auxiliary feedwater, instrumentation
           chargers).</p>
       </section>

@@ -25,7 +25,7 @@ import { SimService } from '../sim/sim.service';
         <nol-readout label="Primary flow" [value]="h('primary_flow')" units="%" [dp]="1"
           [level]="h('primary_flow') < 90 ? 'warn' : 'normal'" />
         <nol-bar [value]="h('primary_flow')" [min]="0" [max]="110" [markers]="[87]" />
-        @if (!acPower()) { <p class="dim">RCPs require off-site power or the main generator — not available.</p> }
+        @if (!acPower()) { <p class="dim">RCPs require off-site power or the main generator - not available.</p> }
       </section>
 
       <section class="panel">

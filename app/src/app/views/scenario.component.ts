@@ -87,7 +87,7 @@ const INJECTIONS: { label: string; target: string; action: string; value: number
       </section>
 
       <section class="panel instr">
-        <h2>Instructor / debug — manual fault injection</h2>
+        <h2>Instructor / debug - manual fault injection</h2>
         <div class="disclaimer">
           This panel is an <strong>instructor / debugging tool</strong>, not an operator control.
           Injected faults take effect immediately at the current simulation time and are layered on
@@ -125,7 +125,7 @@ const INJECTIONS: { label: string; target: string; action: string; value: number
       <section class="panel">
         <h2>Session record &amp; replay</h2>
         <p class="dim sm">Every operator command is recorded with its simulation tick. Export a
-          self-contained session (scenario + seed + action tape) and replay it later — the
+          self-contained session (scenario + seed + action tape) and replay it later - the
           deterministic engine reproduces the run exactly.</p>
         <div class="row">
           <button (click)="exportSession()">Export current session</button>
@@ -342,7 +342,7 @@ export class ScenarioComponent extends ViewBase implements OnInit {
       this.importOk.set(true);
     } catch {
       this.importText = JSON.stringify(JSON.parse(json), null, 2);
-      this.importMsg.set('Clipboard unavailable — JSON placed in the text box.');
+      this.importMsg.set('Clipboard unavailable - JSON placed in the text box.');
     }
   }
 }

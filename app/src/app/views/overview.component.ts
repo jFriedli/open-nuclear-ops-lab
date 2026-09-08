@@ -263,7 +263,7 @@ export class OverviewComponent extends ViewBase {
   readonly essBus = computed(() => this.snap()?.electrical.essential_bus_energized ?? false);
   readonly edgRunning = computed(() => {
     const e = this.snap()?.electrical;
-    if (!e) return '—';
+    if (!e) return '-';
     return `${e.edg_a_running ? 'A' : '-'}${e.edg_b_running ? 'B' : '-'}`;
   });
   readonly mfwOn = computed(() => (this.snap()?.equipment.mfw_pump ?? [true, true]).some((x) => x));

@@ -21,7 +21,7 @@ const TOPICS: Topic[] = [
     id: 'power',
     title: 'Why reactor power changes',
     body: [
-      'Reactor power follows reactivity — the balance between neutrons produced and neutrons lost. When reactivity is exactly zero the reactor is critical and power is steady.',
+      'Reactor power follows reactivity - the balance between neutrons produced and neutrons lost. When reactivity is exactly zero the reactor is critical and power is steady.',
       'Withdrawing control rods adds positive reactivity and power rises; inserting them does the opposite. Because a few neutrons are released seconds to minutes after fission (delayed neutrons), a small reactivity change produces a gradual, controllable power change rather than an instant jump.',
       'The operator rarely knows reactivity directly. They infer it from how fast power is changing and from rod position, then trim the rods to hold the target.',
     ],
@@ -32,7 +32,7 @@ const TOPICS: Topic[] = [
     body: [
       'As fuel gets hotter, more neutrons are absorbed without causing fission (the Doppler effect). This adds negative reactivity almost instantly, so a power rise partly cancels itself. This is a large part of why the reactor is inherently stable.',
       'As the coolant/moderator gets hotter it becomes less dense and moderates neutrons less effectively. In this simulator that moderator temperature coefficient is negative too, so rising average temperature also pushes power down.',
-      'Try it: take rod control to manual, withdraw briefly, then stop. Power overshoots and then settles back down as the fuel and coolant heat up — that settle-back is negative feedback.',
+      'Try it: take rod control to manual, withdraw briefly, then stop. Power overshoots and then settles back down as the fuel and coolant heat up - that settle-back is negative feedback.',
     ],
   },
   {
@@ -49,7 +49,7 @@ const TOPICS: Topic[] = [
     title: 'Steam generation and the heat sink',
     body: [
       'Each steam generator is a big kettle: primary water flows through tubes, secondary water outside the tubes boils. Steam flow out must be matched by feedwater flow in, or the water level drifts.',
-      'Level control uses three signals — level, steam flow and feed flow — so it can react to a load change before the level actually moves ("three-element control").',
+      'Level control uses three signals - level, steam flow and feed flow - so it can react to a load change before the level actually moves ("three-element control").',
       'If feedwater is lost, level falls; auxiliary feedwater starts automatically, and a very low level trips the reactor because the steam generators are the normal way to remove heat.',
     ],
   },
@@ -58,7 +58,7 @@ const TOPICS: Topic[] = [
     title: 'Turbine / generator relationship',
     body: [
       'The turbine converts steam energy to shaft rotation; the generator converts shaft rotation to electricity. While the generator breaker is closed, the grid holds the shaft at exactly synchronous speed.',
-      'If the breaker opens while steam is still flowing (a load rejection), there is suddenly nothing absorbing the shaft power and it speeds up quickly — hence overspeed protection and fast-acting governor valves.',
+      'If the breaker opens while steam is still flowing (a load rejection), there is suddenly nothing absorbing the shaft power and it speeds up quickly - hence overspeed protection and fast-acting governor valves.',
       'A turbine trip at power is followed almost immediately by a reactor trip, because the reactor has lost its main heat sink.',
     ],
   },

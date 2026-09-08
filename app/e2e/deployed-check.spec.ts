@@ -10,6 +10,13 @@ test('the deployed site loads, runs the engine, and completes a LOOP scenario', 
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
   page.on('pageerror', (e) => errors.push(String(e)));
 
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem('nol.prefs.v1', JSON.stringify({ onboarded: true, beginnerMode: true }));
+    } catch {
+      /* ignore */
+    }
+  });
   await page.goto(URL!);
   await expect(page).toHaveTitle(/Open Nuclear Ops Lab/);
   await expect(page.locator('app-csf-strip .csf').first()).toBeVisible({ timeout: 30_000 });
@@ -34,11 +41,11 @@ test('the deployed site loads, runs the engine, and completes a LOOP scenario', 
 
   await page.getByRole('link', { name: 'Alarms', exact: true }).click();
   await page.getByRole('button', { name: 'ACK ALL VISIBLE' }).click();
-  await expect(page.locator('.alarmpill')).toContainText('0 UNACK');
+  await expect(page.locator('.alarmpill')).not.toHaveClass(/hot/);
 
   // The HMI-layer fault milestone works on the live site.
   await page.getByRole('link', { name: 'Scenario / Instructor', exact: true }).click();
-  await page.getByText('HMI Fault — SG-1 Level Frozen On Screen').click();
+  await page.getByText('HMI Fault - SG-1 Level Frozen On Screen').click();
   await page.getByRole('button', { name: /START SCENARIO/ }).click();
   await page.getByRole('button', { name: '10×', exact: true }).click();
   await expect(page.locator('.integrity-bar')).toBeVisible({ timeout: 20_000 });

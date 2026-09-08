@@ -17,7 +17,7 @@ process faults from instrument faults. It is deliberately not accurate.
 ## Known simplifications
 
 ### Neutronics
-- Point kinetics only — **no spatial effects**: no flux tilt, no rod-shadowing,
+- Point kinetics only - **no spatial effects**: no flux tilt, no rod-shadowing,
   no axial offset, no local peaking, no reflector.
 - Single fuel temperature node; no gap conductance or clad model.
 - Prompt-critical excursions are clamped away, not modelled.

@@ -20,9 +20,9 @@ import type { Alarm } from '../sim/sim.types';
       <label>Priority
         <select [ngModel]="priority()" (ngModelChange)="priority.set(+$event)">
           <option [value]="0">all</option>
-          <option [value]="1">1 — high</option>
-          <option [value]="2">2 — medium</option>
-          <option [value]="3">3 — low</option>
+          <option [value]="1">1 - high</option>
+          <option [value]="2">2 - medium</option>
+          <option [value]="3">3 - low</option>
         </select>
       </label>
       <label>Sort

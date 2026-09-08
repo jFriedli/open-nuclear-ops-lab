@@ -55,7 +55,7 @@ failure" scenario raise alarms while the plant itself stays perfectly stable.
 
 During normal operation the operator sees **only** the voted HMI value. The
 true physical state and the raw per-channel readings are exposed **only** when
-instructor / debug mode (the `INSTR` button) is enabled — this sets
+instructor / debug mode (the `INSTR` button) is enabled - this sets
 `Engine::set_debug(true)` and the snapshot then includes `physical` and
 `channels`.
 
@@ -74,7 +74,7 @@ physical.sg1_level     the actual water level  ── changes the plant itself
    ▼ voted / conditioned value
    │   signal.sg1_level   ── signal-processing fault: bias / scale / stuck /
    │                         set on the value that feeds BOTH control and the
-   │                         HMI. Channels still agree — redundancy does NOT
+   │                         HMI. Channels still agree - redundancy does NOT
    │                         catch it; it looks like a real process change.
    ├─────────────► control / protection / alarms / CSF  (use this value)
    │
@@ -87,10 +87,10 @@ physical.sg1_level     the actual water level  ── changes the plant itself
 When an `hmi.*` or `signal.*` fault is active the UI shows a red
 **INDICATION INTEGRITY** banner and marks the affected readouts
 (`⚠ DISP` / `⚠ SIG`). In instructor/debug mode the snapshot also carries
-`hmi_truth` — the un-faulted values — so the discrepancy is visible directly.
+`hmi_truth` - the un-faulted values - so the discrepancy is visible directly.
 
 Try it: `hmi-spoofed-sg-level.json` freezes the SG-1 level gauge while
-feedwater is lost — the reactor still trips on the true low-low level.
+feedwater is lost - the reactor still trips on the true low-low level.
 `signal-bias-pressure.json` biases the processed primary-pressure value high,
 so the pressuriser controller cools the plant down chasing a number that all
 three channels agree on.

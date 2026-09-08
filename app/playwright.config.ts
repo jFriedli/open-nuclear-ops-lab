@@ -16,7 +16,9 @@ export default defineConfig({
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
-    command: 'npx http-server dist/app/browser -p 4200 -c-1 --silent',
+    // Copy index.html -> 404.html so deep-link reloads behave like GitHub Pages.
+    command:
+      'node -e "require(\'fs\').copyFileSync(\'dist/app/browser/index.html\',\'dist/app/browser/404.html\')" && npx http-server dist/app/browser -p 4200 -c-1 --silent',
     url: 'http://127.0.0.1:4200',
     reuseExistingServer: !process.env['CI'],
     timeout: 60_000,
