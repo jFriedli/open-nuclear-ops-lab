@@ -322,6 +322,12 @@ fn apply_event(
                 inputs.turbine_trip = true;
             }
         }
+        ["afw"] => {
+            if active {
+                inputs.afw_available =
+                    Some(!matches!(ev.action.as_str(), "trip" | "fail" | "stop"));
+            }
+        }
         ["reactor"] => {
             if active && (ev.action == "trip") {
                 inputs.reactor_trip = true;

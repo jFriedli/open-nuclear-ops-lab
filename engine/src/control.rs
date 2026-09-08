@@ -130,6 +130,8 @@ impl Controllers {
         let mut rx_trip_reason: Option<String> = None;
         if op.manual_reactor_trip {
             rx_trip_reason = Some("Manual reactor trip".into());
+        } else if scenario_inputs.reactor_trip {
+            rx_trip_reason = Some("Scenario reactor trip".into());
         } else if power > sp::NEUTRON_HI_TRIP {
             rx_trip_reason = Some(format!("High neutron power {power:.0}%"));
         } else if press > sp::PRESS_HI_TRIP {
@@ -144,6 +146,9 @@ impl Controllers {
             rx_trip_reason = Some(format!("High coolant average temperature {tavg:.1} C"));
         } else if flow < sp::FLOW_LO_TRIP && power > 10.0 {
             rx_trip_reason = Some(format!("Low reactor coolant flow {flow:.0}%"));
+        } else if st.turbine_trip_latched && power > 15.0 {
+            // Anticipatory: a turbine trip above ~15% power trips the reactor.
+            rx_trip_reason = Some("Reactor trip on turbine trip (anticipatory)".into());
         }
 
         if let Some(reason) = rx_trip_reason {
@@ -160,6 +165,8 @@ impl Controllers {
         let mut turb_trip_reason: Option<String> = None;
         if op.manual_turbine_trip {
             turb_trip_reason = Some("Manual turbine trip".into());
+        } else if scenario_inputs.turbine_trip {
+            turb_trip_reason = Some("Scenario turbine trip".into());
         } else if st.reactor_trip_latched {
             turb_trip_reason = Some("Turbine trip on reactor trip".into());
         } else if turb_speed > sp::TURB_OVERSPEED_TRIP {

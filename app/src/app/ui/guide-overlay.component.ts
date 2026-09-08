@@ -20,6 +20,7 @@ interface Box {
 @Component({
   selector: 'app-guide-overlay',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '[class.shown]': '!!guide.step()' },
   template: `
     @if (guide.step(); as step) {
       <div role="dialog" aria-label="Guided tour">
@@ -54,14 +55,14 @@ interface Box {
   styles: [
     `
       :host {
+        display: none;
+      }
+      :host.shown {
         position: fixed;
         inset: 0;
         z-index: 200;
         pointer-events: none;
         display: block;
-      }
-      :host:empty {
-        display: none;
       }
       .scrim {
         position: absolute;

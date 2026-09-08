@@ -210,6 +210,8 @@ pub struct PhysicsInputs {
     /// `None` = no override this step.
     pub rcp_override: [Option<bool>; 4],
     pub mfw_override: [Option<bool>; 2],
+    /// `Some(false)` forces auxiliary feedwater unavailable.
+    pub afw_available: Option<bool>,
     pub offsite_override: Option<bool>,
     pub grid_override: Option<bool>,
     pub edg_a_avail_override: Option<bool>,
@@ -471,10 +473,11 @@ impl PhysicalState {
         let mut q_sg_total = 0.0;
         for k in 0..2 {
             let tsat = t_sat(self.sg[k].pressure);
-            // UA scales with primary flow (convective coefficient) and SG level.
-            let ua = SG_UA_RATED
-                * (0.25 + 0.75 * self.primary_flow)
-                * (0.4 + 0.6 * self.sg[k].inventory.clamp(0.0, 1.2));
+            // UA scales with primary flow (convective coefficient) and with SG
+            // water inventory: uncovered tubes transfer very little heat, so a
+            // steam generator that has boiled dry is not a heat sink.
+            let inv = self.sg[k].inventory.clamp(0.0, 1.1);
+            let ua = SG_UA_RATED * (0.25 + 0.75 * self.primary_flow) * (0.04 + 0.96 * inv);
             let q = (ua * (self.t_hot - tsat)).max(0.0);
             self.sg[k].heat_in = q;
             q_sg_total += q;
@@ -767,6 +770,10 @@ impl PhysicalState {
         if min_level < 30.0 {
             self.afw_on = true;
         } else if min_level > 55.0 {
+            self.afw_on = false;
+        }
+        // A scenario / operator can force auxiliary feedwater unavailable.
+        if inp.afw_available == Some(false) {
             self.afw_on = false;
         }
     }

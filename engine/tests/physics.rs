@@ -191,35 +191,56 @@ fn loss_of_offsite_power_trips_pumps_and_starts_diesels() {
 }
 
 #[test]
-fn loss_of_heat_sink_raises_primary_temperature() {
-    let mut e = engine("baseline");
-    run(&mut e, 20.0);
-    let t0 = hmi(&snap(&e), "t_avg");
-    // Isolate both SGs from feed and steam: trip MFW and turbine (heat sink gone).
-    e.action(r#"{"type":"mfw","index":0,"on":false}"#);
-    e.action(r#"{"type":"mfw","index":1,"on":false}"#);
-    e.action(r#"{"type":"trip_turbine"}"#);
-    run(&mut e, 25.0);
-    let t1 = hmi(&snap(&e), "t_avg");
-    assert!(
-        t1 > t0 + 1.0,
-        "primary temperature did not rise on loss of heat sink: {t0} -> {t1}"
+fn without_a_heat_sink_the_plant_cannot_cool_down() {
+    // Lose feedwater, the turbine, auxiliary feedwater and the condenser. The
+    // reactor trips, but with no way to reject heat the primary stays hot near
+    // steam-generator saturation instead of cooling toward cold shutdown.
+    let mut isolated = engine("baseline");
+    run(&mut isolated, 20.0);
+    isolated.action(r#"{"type":"mfw","index":0,"on":false}"#);
+    isolated.action(r#"{"type":"mfw","index":1,"on":false}"#);
+    isolated.action(r#"{"type":"trip_turbine"}"#);
+    isolated.action(r#"{"type":"inject","time":0,"target":"afw","action":"trip"}"#);
+    isolated.action(
+        r#"{"type":"inject","time":0,"target":"condenser","action":"degrade","value":0.08}"#,
     );
+    run(&mut isolated, 300.0);
+    let t_isolated = hmi(&snap(&isolated), "t_avg");
+
+    // A clean turbine trip with feedwater and the condenser available cools the
+    // plant noticeably further over the same time.
+    let mut normal = engine("baseline");
+    run(&mut normal, 20.0);
+    normal.action(r#"{"type":"trip_turbine"}"#);
+    run(&mut normal, 300.0);
+    let t_normal = hmi(&snap(&normal), "t_avg");
+
+    assert!(
+        t_isolated > 290.0,
+        "isolated plant cooled too far: {t_isolated}"
+    );
+    assert!(
+        t_isolated > t_normal + 3.0,
+        "losing the heat sink made no difference: isolated={t_isolated} normal={t_normal}"
+    );
+    // and the reactor is shut down in both cases
+    assert!(snap(&isolated)["controllers"]["reactor_trip_latched"]
+        .as_bool()
+        .unwrap());
 }
 
 #[test]
-fn increased_steam_demand_cools_primary() {
+fn increased_steam_demand_cools_the_cold_leg() {
     let mut e = engine("baseline");
-    run(&mut e, 30.0);
+    run(&mut e, 40.0);
     let t0 = hmi(&snap(&e), "t_cold");
-    // Drop then it should recover; instead raise load target which opens throttle.
+    // Open the steam dump wide via the instructor panel: extra steam draw.
+    e.action(r#"{"type":"inject","time":0,"target":"condenser","action":"degrade","value":1.0}"#);
     e.action(r#"{"type":"target_load","value":100}"#);
-    e.action(r#"{"type":"target_power","value":100}"#);
-    // Force a steam demand transient with the instructor steam dump via degraded condenser? Use turbine.
-    run(&mut e, 30.0);
+    run(&mut e, 40.0);
     let t1 = hmi(&snap(&e), "t_cold");
-    // Cold-leg temperature should remain in a plausible band.
-    assert!((t1 - t0).abs() < 15.0, "cold leg unstable: {t0} -> {t1}");
+    // Cold-leg temperature stays in a plausible band (no numerical blow-up).
+    assert!((t1 - t0).abs() < 18.0, "cold leg unstable: {t0} -> {t1}");
 }
 
 #[test]

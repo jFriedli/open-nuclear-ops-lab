@@ -26,6 +26,25 @@ test('mobile', async ({ page }) => {
   await page.screenshot({ path: `${SHOTS}/mobile-nav.png` });
 });
 
+test('lessons', async ({ page }) => {
+  test.skip(!process.env['SHOTS'], 'set SHOTS=1 to regenerate docs screenshots');
+  await page.setViewportSize({ width: 1200, height: 820 });
+  await open(page);
+  await expect(page.locator('app-csf-strip .csf').first()).toBeVisible({ timeout: 20_000 });
+  await page.getByRole('link', { name: 'Learn', exact: true }).click();
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: `${SHOTS}/lessons.png` });
+  await page
+    .locator('.lesson', { hasText: 'Respond to a reactor trip' })
+    .getByRole('button', { name: /Start lesson/ })
+    .click();
+  await page.getByRole('button', { name: '10×', exact: true }).click();
+  await page.waitForTimeout(5000);
+  await page.getByRole('link', { name: 'Reactor', exact: true }).click();
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: `${SHOTS}/lesson-hud.png` });
+});
+
 test('capture documentation screenshots', async ({ page }) => {
   test.skip(!process.env['SHOTS'], 'set SHOTS=1 to regenerate docs screenshots');
   await page.setViewportSize({ width: 1440, height: 900 });

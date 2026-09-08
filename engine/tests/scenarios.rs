@@ -188,3 +188,26 @@ fn loop_scenario_meets_acceptance_criteria() {
     c.action(r#"{"type":"ack_all"}"#);
     assert_eq!(c.snapshot(), e.snapshot(), "replay diverged");
 }
+
+#[test]
+fn scripted_turbine_and_reactor_trips_actually_fire() {
+    let mut e = Engine::new(include_str!("../../scenarios/turbine-trip.json"), 5.0).unwrap();
+    e.step((70.0 / e.dt()).round() as u32);
+    let s: Value = serde_json::from_str(&e.snapshot()).unwrap();
+    assert!(
+        s["controllers"]["turbine_trip_latched"].as_bool().unwrap(),
+        "scripted turbine trip did not fire"
+    );
+    assert!(
+        s["controllers"]["reactor_trip_latched"].as_bool().unwrap(),
+        "reactor did not follow the turbine trip"
+    );
+
+    let mut e2 = Engine::new(include_str!("../../scenarios/load-rejection.json"), 5.0).unwrap();
+    e2.step((90.0 / e2.dt()).round() as u32);
+    let s2: Value = serde_json::from_str(&e2.snapshot()).unwrap();
+    assert!(
+        s2["controllers"]["reactor_trip_latched"].as_bool().unwrap(),
+        "load rejection did not trip the plant"
+    );
+}

@@ -8,6 +8,8 @@ import { CsfStripComponent } from './ui/csf-strip.component';
 import { GuideOverlayComponent } from './ui/guide-overlay.component';
 import { WelcomeComponent } from './ui/welcome.component';
 import { PlantStatusBarComponent } from './ui/plant-status-bar.component';
+import { LessonHudComponent } from './ui/lesson-hud.component';
+import { DebriefComponent } from './ui/debrief.component';
 
 @Component({
   selector: 'app-root',
@@ -20,6 +22,8 @@ import { PlantStatusBarComponent } from './ui/plant-status-bar.component';
     GuideOverlayComponent,
     WelcomeComponent,
     PlantStatusBarComponent,
+    LessonHudComponent,
+    DebriefComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',

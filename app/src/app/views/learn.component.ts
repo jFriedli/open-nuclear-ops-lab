@@ -1,4 +1,6 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { LessonService } from '../core/lesson.service';
+import { GuideService } from '../core/guide.service';
 
 interface Topic {
   id: string;
@@ -95,29 +97,93 @@ const TOPICS: Topic[] = [
   selector: 'nol-learn',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="layout">
-      <nav class="panel toc">
-        <h2>Topics</h2>
-        @for (t of topics; track t.id) {
-          <a [class.sel]="open() === t.id" (click)="open.set(t.id)">{{ t.title }}</a>
-        }
-      </nav>
-      <article class="panel">
-        @for (t of topics; track t.id) {
-          @if (open() === t.id) {
-            <h3>{{ t.title }}</h3>
-            @for (p of t.body; track $index) { <p>{{ p }}</p> }
-          }
-        }
-        <hr />
-        <p class="dim sm">These explanations were written for this project from general public-domain
-          engineering knowledge. They are simplified for teaching and do not reproduce any
-          copyrighted training material or any real plant's procedures.</p>
-      </article>
+    <div class="tabs">
+      <button [class.active]="tab() === 'lessons'" (click)="tab.set('lessons')">Lessons</button>
+      <button [class.active]="tab() === 'reference'" (click)="tab.set('reference')">How it works</button>
+      <button (click)="startTour()">Replay the tour</button>
     </div>
+
+    @if (tab() === 'lessons') {
+      <div class="lessons">
+        @for (l of lessons.all; track l.id) {
+          <div class="lesson" [class.done]="isDone(l.id)">
+            <div class="ltop">
+              <b>{{ l.title }}</b>
+              <span class="tag">{{ l.level }}</span>
+              <span class="dim sm">~{{ l.minutes }} min</span>
+              @if (isDone(l.id)) { <span class="tag ok">done</span> }
+            </div>
+            <p class="dim">{{ l.brief }}</p>
+            <ul class="objs">
+              @for (o of l.objectives; track o.id) { <li>{{ o.text }}</li> }
+            </ul>
+            <button class="primary" (click)="start(l.id)">
+              {{ isDone(l.id) ? 'Do it again' : 'Start lesson' }}
+            </button>
+          </div>
+        }
+        <p class="dim sm">
+          Lessons load a scenario and check your objectives automatically. You can pause, use the
+          Hint button, or end a lesson any time. Nothing here is a real procedure.
+        </p>
+      </div>
+    } @else {
+      <div class="layout">
+        <nav class="panel toc">
+          <h2>Topics</h2>
+          @for (t of topics; track t.id) {
+            <a [class.sel]="openTopic() === t.id" (click)="openTopic.set(t.id)">{{ t.title }}</a>
+          }
+        </nav>
+        <article class="panel">
+          @for (t of topics; track t.id) {
+            @if (openTopic() === t.id) {
+              <h3>{{ t.title }}</h3>
+              @for (p of t.body; track $index) { <p>{{ p }}</p> }
+            }
+          }
+          <hr />
+          <p class="dim sm">Written for this project from general engineering knowledge. Simplified
+            for teaching; not a real procedure.</p>
+        </article>
+      </div>
+    }
   `,
   styles: [
     `
+      .tabs {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+      }
+      .lessons {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        align-items: start;
+      }
+      .lesson {
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--panel);
+        padding: 12px;
+      }
+      .lesson.done {
+        border-color: color-mix(in srgb, var(--ok) 40%, var(--line));
+      }
+      .ltop {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 4px;
+      }
+      .objs {
+        margin: 6px 0 10px 16px;
+        font-size: 11px;
+        color: var(--text-dim);
+      }
       .layout {
         display: flex;
         gap: 12px;
@@ -163,6 +229,19 @@ const TOPICS: Topic[] = [
   ],
 })
 export class LearnComponent {
+  readonly lessons = inject(LessonService);
+  private readonly guide = inject(GuideService);
   readonly topics = TOPICS;
-  readonly open = signal('overview');
+  readonly tab = signal<'lessons' | 'reference'>('lessons');
+  readonly openTopic = signal('overview');
+
+  isDone(id: string): boolean {
+    return this.lessons.done().includes(id);
+  }
+  start(id: string): void {
+    void this.lessons.start(id);
+  }
+  startTour(): void {
+    this.guide.start('basics');
+  }
 }
