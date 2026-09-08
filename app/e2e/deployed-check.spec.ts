@@ -36,5 +36,12 @@ test('the deployed site loads, runs the engine, and completes a LOOP scenario', 
   await page.getByRole('button', { name: 'ACK ALL VISIBLE' }).click();
   await expect(page.locator('.alarmpill')).toContainText('0 UNACK');
 
+  // The HMI-layer fault milestone works on the live site.
+  await page.getByRole('link', { name: 'Scenario / Instructor', exact: true }).click();
+  await page.getByText('HMI Fault — SG-1 Level Frozen On Screen').click();
+  await page.getByRole('button', { name: /START SCENARIO/ }).click();
+  await page.getByRole('button', { name: '10×', exact: true }).click();
+  await expect(page.locator('.integrity-bar')).toBeVisible({ timeout: 20_000 });
+
   expect(errors, errors.join('\n')).toEqual([]);
 });
