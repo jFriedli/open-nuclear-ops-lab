@@ -1,0 +1,16 @@
+{
+  "id": "load-rejection",
+  "name": "Full Load Rejection",
+  "description": "The generator breaker opens on a grid disturbance while the turbine is still admitting steam. Shaft speed rises toward the overspeed trip; the turbine trips and the reactor follows.",
+  "initial": "hot_full_power",
+  "seed": 577215,
+  "briefing": "The grid rejects the unit's load at t+25 s. Watch turbine speed and the overspeed protection, then manage the trip.",
+  "learning_objectives": [
+    "Why a sudden loss of electrical load causes turbine overspeed",
+    "Overspeed protection and its relationship to the governor valves",
+    "Difference between load rejection and a simple turbine trip"
+  ],
+  "events": [
+    { "time": 25, "target": "electrical.grid", "action": "trip", "label": "Grid load rejection" }
+  ]
+}

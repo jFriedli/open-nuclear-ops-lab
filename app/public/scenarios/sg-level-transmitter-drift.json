@@ -1,0 +1,16 @@
+{
+  "id": "sg-level-transmitter-drift",
+  "name": "SG-1 Level Transmitter Drift (Channel B)",
+  "description": "One of three steam generator level channels drifts slowly upward. The feedwater controller (using the voted signal) begins to underfeed SG-1 while channel disagreement grows. The physical level falls even though one indicator looks high.",
+  "initial": "hot_full_power",
+  "seed": 4242,
+  "briefing": "Channel B of the SG-1 level instrument starts drifting at t+20 s. Compare the three channels, identify the faulted one, and take manual control of feedwater before a low-low level trip.",
+  "learning_objectives": [
+    "Instrument failure versus process failure: the tank is not actually full",
+    "Median/voting logic and how a single drifting channel skews control",
+    "Value of redundant instrumentation and cross-channel checks"
+  ],
+  "events": [
+    { "time": 20, "target": "instrument.sg1_level.B", "action": "drift", "value": 0.25, "label": "SG-1 level channel B drift +0.25 %/s" }
+  ]
+}

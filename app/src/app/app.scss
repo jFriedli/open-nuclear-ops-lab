@@ -1,0 +1,146 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 6px 12px;
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+
+.brand strong {
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+.brand .edu {
+  display: block;
+  font-size: 10px;
+  color: var(--warn);
+}
+
+.clockbox,
+.statusbox,
+.speeds {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.clockbox {
+  margin-left: auto;
+}
+.clk {
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  padding: 0 6px;
+}
+
+.statusbox .scen {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.alarmpill {
+  text-decoration: none;
+  color: var(--text-dim);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+}
+.alarmpill.hot {
+  color: var(--alarm);
+  border-color: var(--alarm);
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.sidenav {
+  width: 168px;
+  flex-shrink: 0;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: auto;
+}
+.sidenav a {
+  color: var(--text-dim);
+  text-decoration: none;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+.sidenav a:hover {
+  background: var(--panel-3);
+  color: var(--text);
+}
+.sidenav a.active {
+  background: var(--accent-2);
+  color: #fff;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 12px;
+}
+
+.cmdtoast {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  padding: 8px 14px;
+  border-radius: 5px;
+  font-size: 12px;
+  max-width: 80vw;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
+}
+.cmdtoast.reject {
+  background: #5a1c1c;
+  border: 1px solid var(--alarm);
+  color: #ffd9d9;
+}
+.cmdtoast b {
+  margin-right: 6px;
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 720px) {
+  .body {
+    flex-direction: column;
+  }
+  .sidenav {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+  }
+}

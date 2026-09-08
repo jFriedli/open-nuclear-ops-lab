@@ -1,0 +1,17 @@
+{
+  "id": "instrument-masked-transient",
+  "name": "Real Transient Partly Masked By A Failed Channel",
+  "description": "A pressurizer level channel fails high at the same time a pressurizer relief valve sticks open. The real inventory loss is under way, but one indication looks reassuring. The operator must not be lulled by the optimistic channel.",
+  "initial": "hot_full_power",
+  "seed": 90909,
+  "briefing": "At t+20 s a pressurizer level channel fails high. At t+30 s a relief valve sticks 25% open. The plant is really losing inventory. Trust the voted value and the physical symptoms (pressure, sub-cooling).",
+  "learning_objectives": [
+    "Coincident instrument + process faults are the hardest to diagnose",
+    "Never dismiss a transient on the strength of one favourable indication",
+    "Using multiple independent parameters to confirm primary inventory status"
+  ],
+  "events": [
+    { "time": 20, "target": "instrument.pzr_level.B", "action": "fail_high", "value": 92, "label": "Pressurizer level channel B failed high" },
+    { "time": 30, "target": "valve.porv", "action": "stuck", "value": 0.25, "label": "Pressurizer PORV stuck 25% open" }
+  ]
+}

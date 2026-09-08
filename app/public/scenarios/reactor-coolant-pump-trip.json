@@ -1,0 +1,15 @@
+{
+  "id": "reactor-coolant-pump-trip",
+  "name": "Reactor Coolant Pump Trip (1 of 4)",
+  "description": "One reactor coolant pump trips. Primary flow steps down, the loop delta-T widens and coolant average temperature transiently rises before controllers respond. With three pumps running the reactor should not trip.",
+  "initial": "hot_full_power",
+  "seed": 314159,
+  "briefing": "A single RCP breaker opens at t+30 s. Watch flow, delta-T and T-avg. Decide whether a power reduction is warranted.",
+  "learning_objectives": [
+    "Relate coolant mass flow to core delta-T at constant power",
+    "Understand the low-flow reactor trip permissive and why one pump out is tolerable"
+  ],
+  "events": [
+    { "time": 30, "target": "rcp.0", "action": "trip", "label": "RCP-1 trip" }
+  ]
+}

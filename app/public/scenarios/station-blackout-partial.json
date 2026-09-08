@@ -1,0 +1,18 @@
+{
+  "id": "station-blackout-partial",
+  "name": "LOOP With One Diesel Failure",
+  "description": "A loss of off-site power is followed by the failure of emergency diesel generator B to start. Only train A is available to power essential loads; the operator observes the degraded but stable decay-heat removal configuration.",
+  "initial": "hot_full_power",
+  "seed": 8675309,
+  "briefing": "Off-site power is lost at t+15 s. Diesel B fails to start at t+16 s. Confirm diesel A carries the essential bus, monitor battery charge, and keep the plant stable on one train.",
+  "learning_objectives": [
+    "Redundancy and the single-failure criterion in emergency power",
+    "How to distinguish an equipment (diesel) failure from an instrument failure",
+    "Battery endurance and load shedding when AC power is degraded"
+  ],
+  "events": [
+    { "time": 15, "target": "electrical.offsite", "action": "trip", "label": "Loss of off-site power" },
+    { "time": 15, "target": "electrical.grid", "action": "trip", "label": "Grid unavailable" },
+    { "time": 16, "target": "edg.b", "action": "fail", "value": 0, "label": "Emergency diesel generator B fails to start" }
+  ]
+}

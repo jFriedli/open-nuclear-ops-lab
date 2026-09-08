@@ -1,0 +1,18 @@
+{
+  "id": "loss-of-offsite-power",
+  "name": "Loss of Off-Site Power (LOOP)",
+  "description": "Off-site grid supply is lost. Reactor coolant pumps and main feedwater pumps de-energise, the turbine and reactor trip, essential buses transfer to the emergency diesel generators, and the plant settles on natural circulation with decay-heat removal.",
+  "initial": "hot_full_power",
+  "seed": 20260908,
+  "briefing": "You are at ~100% power. At t+20 s the switchyard is lost. Verify automatic protective actions, confirm both diesels pick up the essential buses, and stabilise the plant on decay heat. Acknowledge alarms as they come in.",
+  "learning_objectives": [
+    "Recognise a process (electrical) initiating event versus an instrument fault",
+    "Follow the trip cascade: LOOP -> RCP trip -> low-flow reactor trip -> turbine trip",
+    "Observe that decay heat persists and must still be removed after shutdown",
+    "Confirm emergency diesel generator start and essential bus re-energisation"
+  ],
+  "events": [
+    { "time": 20, "target": "electrical.offsite", "action": "trip", "label": "Loss of off-site power (switchyard)" },
+    { "time": 20, "target": "electrical.grid", "action": "trip", "label": "Grid unavailable" }
+  ]
+}

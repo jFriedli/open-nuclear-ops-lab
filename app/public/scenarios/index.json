@@ -1,0 +1,122 @@
+[
+  {
+    "file": "control-rod-position-disagreement.json",
+    "id": "control-rod-position-disagreement",
+    "name": "Control Rod Position Disagreement",
+    "description": "The rod position indication for the controlling bank diverges from demand. A rod-position channel reads a stuck value while the bank actually moves, producing a rod deviation alarm and a mismatch between indicated reactivity and observed power.",
+    "initial": "hot_full_power",
+    "events": 2
+  },
+  {
+    "file": "degraded-condenser.json",
+    "id": "degraded-condenser",
+    "name": "Degraded Condenser Vacuum",
+    "description": "Condenser cooling effectiveness degrades over two minutes (e.g. loss of circulating-water flow or air in-leakage). Backpressure rises, turbine output falls, and eventually the high-backpressure turbine trip actuates, followed by the reactor trip.",
+    "initial": "hot_full_power",
+    "events": 1
+  },
+  {
+    "file": "emergency-diesel-failure.json",
+    "id": "emergency-diesel-failure",
+    "name": "Emergency Diesel Generator A Failure (standalone)",
+    "description": "Emergency diesel generator A is declared unavailable (e.g. maintenance lockout). The plant continues at power, but a subsequent loss of off-site power would leave only train B. This scenario then imposes that LOOP so the operator sees single-train response.",
+    "initial": "hot_full_power",
+    "events": 3
+  },
+  {
+    "file": "load-rejection.json",
+    "id": "load-rejection",
+    "name": "Full Load Rejection",
+    "description": "The generator breaker opens on a grid disturbance while the turbine is still admitting steam. Shaft speed rises toward the overspeed trip; the turbine trips and the reactor follows.",
+    "initial": "hot_full_power",
+    "events": 1
+  },
+  {
+    "file": "generic-instrumentation-failure.json",
+    "id": "generic-instrumentation-failure",
+    "name": "Generic Instrumentation Failure (multi-signal)",
+    "description": "Several unrelated instrument channels fail in different ways at different times: a failed-low neutron power channel, a biased T-avg channel, and a noisy feedwater flow signal. No physical process fault occurs. The exercise is pure fault classification.",
+    "initial": "hot_full_power",
+    "events": 3
+  },
+  {
+    "file": "station-blackout-partial.json",
+    "id": "station-blackout-partial",
+    "name": "LOOP With One Diesel Failure",
+    "description": "A loss of off-site power is followed by the failure of emergency diesel generator B to start. Only train A is available to power essential loads; the operator observes the degraded but stable decay-heat removal configuration.",
+    "initial": "hot_full_power",
+    "events": 3
+  },
+  {
+    "file": "loss-of-offsite-power.json",
+    "id": "loss-of-offsite-power",
+    "name": "Loss of Off-Site Power (LOOP)",
+    "description": "Off-site grid supply is lost. Reactor coolant pumps and main feedwater pumps de-energise, the turbine and reactor trip, essential buses transfer to the emergency diesel generators, and the plant settles on natural circulation with decay-heat removal.",
+    "initial": "hot_full_power",
+    "events": 2
+  },
+  {
+    "file": "feedwater-pump-trip.json",
+    "id": "feedwater-pump-trip",
+    "name": "Main Feedwater Pump Trip",
+    "description": "Both main feedwater pumps trip. Steam generator levels fall, auxiliary feedwater actuates automatically, and low-low SG level trips the reactor if levels are not restored.",
+    "initial": "hot_full_power",
+    "events": 2
+  },
+  {
+    "file": "porv-stuck-open.json",
+    "id": "porv-stuck-open",
+    "name": "Pressurizer Relief Valve Stuck Partially Open",
+    "description": "A pressurizer power-operated relief valve sticks ~35% open. Primary pressure and pressurizer level fall as inventory is lost through the valve; if uncorrected the low-pressure and low-level reactor trips actuate.",
+    "initial": "hot_full_power",
+    "events": 1
+  },
+  {
+    "file": "pressure-transmitter-stuck.json",
+    "id": "pressure-transmitter-stuck",
+    "name": "Primary Pressure Transmitter Stuck (Channel A)",
+    "description": "One primary-pressure channel freezes at its current value. Later a real depressurisation begins (a relief valve cracks open). The frozen channel keeps indicating normal pressure while the two healthy channels fall, driving a channel-disagreement alarm.",
+    "initial": "hot_full_power",
+    "events": 2
+  },
+  {
+    "file": "loss-of-heat-sink.json",
+    "id": "loss-of-heat-sink",
+    "name": "Progressive Loss Of Heat Sink",
+    "description": "The turbine trips, then the condenser degrades so steam dump becomes ineffective, then one feedwater pump is lost. The steam generators are progressively isolated as an effective heat sink and primary temperature climbs until protection and auxiliary feedwater arrest the transient.",
+    "initial": "hot_full_power",
+    "events": 3
+  },
+  {
+    "file": "reactor-coolant-pump-trip.json",
+    "id": "reactor-coolant-pump-trip",
+    "name": "Reactor Coolant Pump Trip (1 of 4)",
+    "description": "One reactor coolant pump trips. Primary flow steps down, the loop delta-T widens and coolant average temperature transiently rises before controllers respond. With three pumps running the reactor should not trip.",
+    "initial": "hot_full_power",
+    "events": 1
+  },
+  {
+    "file": "instrument-masked-transient.json",
+    "id": "instrument-masked-transient",
+    "name": "Real Transient Partly Masked By A Failed Channel",
+    "description": "A pressurizer level channel fails high at the same time a pressurizer relief valve sticks open. The real inventory loss is under way, but one indication looks reassuring. The operator must not be lulled by the optimistic channel.",
+    "initial": "hot_full_power",
+    "events": 2
+  },
+  {
+    "file": "sg-level-transmitter-drift.json",
+    "id": "sg-level-transmitter-drift",
+    "name": "SG-1 Level Transmitter Drift (Channel B)",
+    "description": "One of three steam generator level channels drifts slowly upward. The feedwater controller (using the voted signal) begins to underfeed SG-1 while channel disagreement grows. The physical level falls even though one indicator looks high.",
+    "initial": "hot_full_power",
+    "events": 1
+  },
+  {
+    "file": "turbine-trip.json",
+    "id": "turbine-trip",
+    "name": "Turbine Trip At Power",
+    "description": "The main turbine trips from full load. Steam dump to the condenser opens, secondary pressure rises, and the reactor trips on the anticipatory turbine-trip signal at high power.",
+    "initial": "hot_full_power",
+    "events": 1
+  }
+]
