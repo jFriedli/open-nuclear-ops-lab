@@ -1,0 +1,18 @@
+{
+  "id": "generic-instrumentation-failure",
+  "name": "Generic Instrumentation Failure (multi-signal)",
+  "description": "Several unrelated instrument channels fail in different ways at different times: a failed-low neutron power channel, a biased T-avg channel, and a noisy feedwater flow signal. No physical process fault occurs. The exercise is pure fault classification.",
+  "initial": "hot_full_power",
+  "seed": 654321,
+  "briefing": "Between t+20 s and t+80 s a series of instrument faults appear with NO underlying plant problem. Use redundancy, cross-checks and physical reasoning to prove the plant is actually stable.",
+  "learning_objectives": [
+    "Systematically classifying failures: process / instrument / control / operator",
+    "Recognising that multiple alarms do not necessarily mean a plant transient",
+    "Building confidence in the true plant state from independent indications"
+  ],
+  "events": [
+    { "time": 20, "target": "instrument.neutron_power.C", "action": "fail_low", "value": 0, "label": "Neutron power channel C failed low" },
+    { "time": 45, "target": "instrument.t_avg.A", "action": "bias", "value": 6.0, "label": "T-avg channel A bias +6 C" },
+    { "time": 70, "target": "instrument.sg1_fw_flow.X", "action": "noise", "value": 12.0, "label": "SG-1 feedwater flow signal noisy" }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "id": "emergency-diesel-failure",
+  "name": "Emergency Diesel Generator A Failure (standalone)",
+  "description": "Emergency diesel generator A is declared unavailable (e.g. maintenance lockout). The plant continues at power, but a subsequent loss of off-site power would leave only train B. This scenario then imposes that LOOP so the operator sees single-train response.",
+  "initial": "hot_full_power",
+  "seed": 135791,
+  "briefing": "Diesel A is out of service from t+5 s. Off-site power is then lost at t+40 s. Confirm diesel B alone re-energises the essential bus.",
+  "learning_objectives": [
+    "Technical-specification style equipment availability and its consequences",
+    "Single-train emergency power response",
+    "The difference between a diesel that failed and one that was never started"
+  ],
+  "events": [
+    { "time": 5, "target": "edg.a", "action": "fail", "value": 0, "label": "Emergency diesel generator A out of service" },
+    { "time": 40, "target": "electrical.offsite", "action": "trip", "label": "Loss of off-site power" },
+    { "time": 40, "target": "electrical.grid", "action": "trip", "label": "Grid unavailable" }
+  ]
+}

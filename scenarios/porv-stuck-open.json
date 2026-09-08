@@ -1,0 +1,16 @@
+{
+  "id": "porv-stuck-open",
+  "name": "Pressurizer Relief Valve Stuck Partially Open",
+  "description": "A pressurizer power-operated relief valve sticks ~35% open. Primary pressure and pressurizer level fall as inventory is lost through the valve; if uncorrected the low-pressure and low-level reactor trips actuate.",
+  "initial": "hot_full_power",
+  "seed": 111213,
+  "briefing": "A relief valve fails partly open at t+25 s. Diagnose the slow depressurisation (valve position vs. heater demand vs. real leak) and act before protection setpoints are reached.",
+  "learning_objectives": [
+    "Primary inventory and pressure control via the pressurizer",
+    "A small break / stuck-open valve as a loss-of-inventory event",
+    "Reading heater demand and valve position to localise the fault"
+  ],
+  "events": [
+    { "time": 25, "target": "valve.porv", "action": "stuck", "value": 0.35, "label": "Pressurizer PORV stuck 35% open" }
+  ]
+}

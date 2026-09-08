@@ -1,0 +1,16 @@
+{
+  "id": "turbine-trip",
+  "name": "Turbine Trip At Power",
+  "description": "The main turbine trips from full load. Steam dump to the condenser opens, secondary pressure rises, and the reactor trips on the anticipatory turbine-trip signal at high power.",
+  "initial": "hot_full_power",
+  "seed": 161803,
+  "briefing": "The turbine trips at t+30 s. Confirm steam dump operation, the anticipatory reactor trip, and stabilise on decay heat with the condenser as the heat sink.",
+  "learning_objectives": [
+    "Turbine/reactor coupling and the anticipatory reactor trip",
+    "Steam dump (condenser bypass) as an alternative heat sink",
+    "Secondary pressure response to a sudden loss of steam load"
+  ],
+  "events": [
+    { "time": 30, "target": "turbine", "action": "trip", "label": "Main turbine trip" }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "id": "loss-of-heat-sink",
+  "name": "Progressive Loss Of Heat Sink",
+  "description": "The turbine trips, then the condenser degrades so steam dump becomes ineffective, then one feedwater pump is lost. The steam generators are progressively isolated as an effective heat sink and primary temperature climbs until protection and auxiliary feedwater arrest the transient.",
+  "initial": "hot_full_power",
+  "seed": 24601,
+  "briefing": "A compound secondary-side event develops from t+20 s. Prioritise restoring a heat sink (steam dump, atmospheric relief, auxiliary feedwater) over everything else.",
+  "learning_objectives": [
+    "Core heat removal as the dominant post-trip safety function",
+    "How several modest faults combine into a serious transient",
+    "Recognising when decay heat exceeds available heat-sink capacity"
+  ],
+  "events": [
+    { "time": 20, "target": "turbine", "action": "trip", "label": "Main turbine trip" },
+    { "time": 35, "target": "condenser", "action": "degrade", "value": 0.15, "duration": 60, "label": "Condenser vacuum lost" },
+    { "time": 90, "target": "mfw.0", "action": "trip", "label": "Main feedwater pump A trip" }
+  ]
+}

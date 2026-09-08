@@ -1,0 +1,18 @@
+{
+  "id": "pressure-transmitter-stuck",
+  "name": "Primary Pressure Transmitter Stuck (Channel A)",
+  "description": "One primary-pressure channel freezes at its current value. Later a real depressurisation begins (a relief valve cracks open). The frozen channel keeps indicating normal pressure while the two healthy channels fall, driving a channel-disagreement alarm.",
+  "initial": "hot_full_power",
+  "seed": 5150,
+  "briefing": "Pressure channel A sticks at t+15 s. From t+90 s a relief valve leaks and real primary pressure falls. Determine which channels to trust and whether protection is still bounded.",
+  "learning_objectives": [
+    "A stuck sensor holds its last value regardless of the process",
+    "Channel disagreement alarms as the first indication of an instrument fault",
+    "Why safety systems use multiple independent channels",
+    "Coincident instrument fault + real transient is the hardest case"
+  ],
+  "events": [
+    { "time": 15, "target": "instrument.primary_pressure.A", "action": "stuck", "value": 0, "label": "Primary pressure channel A stuck" },
+    { "time": 90, "target": "valve.porv", "action": "stuck", "value": 0.18, "recover_after": 120, "label": "Pressurizer relief valve leaking (18% open)" }
+  ]
+}

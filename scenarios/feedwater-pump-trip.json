@@ -1,0 +1,17 @@
+{
+  "id": "feedwater-pump-trip",
+  "name": "Main Feedwater Pump Trip",
+  "description": "Both main feedwater pumps trip. Steam generator levels fall, auxiliary feedwater actuates automatically, and low-low SG level trips the reactor if levels are not restored.",
+  "initial": "hot_full_power",
+  "seed": 2718281,
+  "briefing": "Feedwater is lost at t+25 s. Track SG levels, confirm auxiliary feedwater start, and manage the resulting reactor/turbine trip.",
+  "learning_objectives": [
+    "Feedwater/steam mass balance in the steam generators",
+    "Role of auxiliary feedwater as a safety-grade heat-sink makeup",
+    "Low-low SG level as a reactor trip function"
+  ],
+  "events": [
+    { "time": 25, "target": "mfw.0", "action": "trip", "label": "Main feedwater pump A trip" },
+    { "time": 27, "target": "mfw.1", "action": "trip", "label": "Main feedwater pump B trip" }
+  ]
+}

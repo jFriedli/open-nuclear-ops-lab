@@ -1,0 +1,17 @@
+{
+  "id": "control-rod-position-disagreement",
+  "name": "Control Rod Position Disagreement",
+  "description": "The rod position indication for the controlling bank diverges from demand. A rod-position channel reads a stuck value while the bank actually moves, producing a rod deviation alarm and a mismatch between indicated reactivity and observed power.",
+  "initial": "hot_full_power",
+  "seed": 90210,
+  "briefing": "At t+20 s a rod-position channel sticks. Shortly after, automatic rod control makes a small correction. Use neutron power and T-avg to judge the true rod position.",
+  "learning_objectives": [
+    "Cross-checking rod position against core power and temperature",
+    "Position indication is itself an instrument that can fail",
+    "Distinguishing a stuck rod (process) from a stuck rod indicator (instrument)"
+  ],
+  "events": [
+    { "time": 20, "target": "instrument.rod_pos.C", "action": "stuck", "value": 0, "label": "Rod position channel C stuck" },
+    { "time": 45, "target": "physical.rho_external", "action": "ramp", "value": 0.0006, "duration": 20, "label": "Slow positive reactivity (e.g. boron dilution) forcing a rod correction" }
+  ]
+}

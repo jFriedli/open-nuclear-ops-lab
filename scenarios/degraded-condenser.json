@@ -1,0 +1,16 @@
+{
+  "id": "degraded-condenser",
+  "name": "Degraded Condenser Vacuum",
+  "description": "Condenser cooling effectiveness degrades over two minutes (e.g. loss of circulating-water flow or air in-leakage). Backpressure rises, turbine output falls, and eventually the high-backpressure turbine trip actuates, followed by the reactor trip.",
+  "initial": "hot_full_power",
+  "seed": 246810,
+  "briefing": "Condenser performance decays starting at t+15 s. Track backpressure and generator output. Decide whether to reduce load pre-emptively.",
+  "learning_objectives": [
+    "The condenser as the normal ultimate heat sink and its effect on cycle efficiency",
+    "Backpressure vs. turbine output relationship",
+    "A slowly developing process fault versus a step fault"
+  ],
+  "events": [
+    { "time": 15, "target": "condenser", "action": "degrade", "value": 0.35, "duration": 120, "label": "Condenser effectiveness degrading to 35%" }
+  ]
+}
