@@ -20,7 +20,14 @@ pub struct Alarm {
     pub raised_at: f64,
     pub cleared_at: Option<f64>,
     pub count: u32,
+    /// Debounce: time the raw condition last disagreed with `active`.
+    #[serde(skip)]
+    since_change: Option<f64>,
 }
+
+/// Annunciator time delays (s) — a real alarm system debounces to stop chatter.
+const RAISE_DELAY: f64 = 0.4;
+const CLEAR_DELAY: f64 = 3.0;
 
 #[derive(Clone, Debug, Serialize)]
 pub struct AlarmEvent {
@@ -246,34 +253,45 @@ impl AlarmManager {
                     raised_at: now,
                     cleared_at: Some(now),
                     count: 0,
+                    since_change: None,
                 });
             entry.message = c.message.clone();
             entry.priority = c.priority;
-            if c.active && !entry.active {
-                entry.active = true;
-                entry.acknowledged = false;
-                entry.raised_at = now;
-                entry.cleared_at = None;
-                entry.count += 1;
-                self.history.push(AlarmEvent {
-                    sim_time: now,
-                    id: c.id.to_string(),
-                    transition: "raised".into(),
-                    priority: c.priority,
-                    subsystem: c.subsystem.to_string(),
-                    message: c.message.clone(),
-                });
-            } else if !c.active && entry.active {
-                entry.active = false;
-                entry.cleared_at = Some(now);
-                self.history.push(AlarmEvent {
-                    sim_time: now,
-                    id: c.id.to_string(),
-                    transition: "cleared".into(),
-                    priority: c.priority,
-                    subsystem: c.subsystem.to_string(),
-                    message: c.message.clone(),
-                });
+
+            if c.active == entry.active {
+                // Raw condition agrees with the latched state — cancel any pending flip.
+                entry.since_change = None;
+            } else {
+                let start = *entry.since_change.get_or_insert(now);
+                let held = now - start;
+                if c.active && held >= RAISE_DELAY {
+                    entry.active = true;
+                    entry.acknowledged = false;
+                    entry.raised_at = now;
+                    entry.cleared_at = None;
+                    entry.count += 1;
+                    entry.since_change = None;
+                    self.history.push(AlarmEvent {
+                        sim_time: now,
+                        id: c.id.to_string(),
+                        transition: "raised".into(),
+                        priority: c.priority,
+                        subsystem: c.subsystem.to_string(),
+                        message: c.message.clone(),
+                    });
+                } else if !c.active && held >= CLEAR_DELAY {
+                    entry.active = false;
+                    entry.cleared_at = Some(now);
+                    entry.since_change = None;
+                    self.history.push(AlarmEvent {
+                        sim_time: now,
+                        id: c.id.to_string(),
+                        transition: "cleared".into(),
+                        priority: c.priority,
+                        subsystem: c.subsystem.to_string(),
+                        message: c.message.clone(),
+                    });
+                }
             }
         }
         // Bound history.
