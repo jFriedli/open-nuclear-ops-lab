@@ -1,0 +1,19 @@
+# Rust
+/engine/target
+**/*.rs.bk
+
+# Node / Angular
+/app/node_modules
+/app/dist
+/app/.angular
+/app/coverage
+/app/playwright-report
+/app/test-results
+/app/blob-report
+
+# Editor / OS
+.DS_Store
+*.log
+.idea
+.vscode/*
+!.vscode/extensions.json
