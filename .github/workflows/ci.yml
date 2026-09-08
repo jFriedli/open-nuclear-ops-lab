@@ -62,7 +62,7 @@ jobs:
         run: npm test -- --no-watch
         working-directory: app
       - name: Production build
-        run: npx ng build --base-href /${{ github.event.repository.name }}/
+        run: npx ng build
         working-directory: app
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium

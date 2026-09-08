@@ -106,9 +106,13 @@ export class MiniTrendComponent implements AfterViewInit {
         }
       }
       if (!Number.isFinite(lo)) continue;
-      const pad = (hi - lo) * 0.1 || 1;
-      lo -= pad;
-      hi += pad;
+      // Keep a sensible minimum span so measurement noise on a near-constant
+      // signal is not amplified into a jagged full-height trace.
+      const mag = Math.max(Math.abs(hi), Math.abs(lo), 1);
+      const span = Math.max(hi - lo, mag * 0.04);
+      const mid = (hi + lo) / 2;
+      lo = mid - span / 2 - span * 0.15;
+      hi = mid + span / 2 + span * 0.15;
       ctx.beginPath();
       ctx.strokeStyle = this.color(k);
       ctx.lineWidth = 1.25;

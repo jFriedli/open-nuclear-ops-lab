@@ -134,7 +134,9 @@ export class ReactorComponent extends ViewBase {
 
   readonly ctl = computed(() => this.snap()!.controllers);
   readonly tripped = computed(() => this.snap()?.controllers.reactor_trip_latched ?? false);
-  readonly decayPct = computed(() => (this.phys()?.decay_heat ?? 0) * 100);
+  // Derived from HMI values so it is available without instructor mode:
+  // thermal% = (fission + decay)·100 ; subtract indicated fission power.
+  readonly decayPct = computed(() => Math.max(0, this.h('thermal_power') / 10 - this.h('neutron_power')));
 
   pcm(v: number): string {
     return (v * 1e5).toFixed(0);
