@@ -7,7 +7,8 @@ import { Injectable, signal } from '@angular/core';
  */
 export interface Preferences {
   debugMode: boolean;
-  beginnerMode: boolean;
+  /** Learn mode on = the contextual coach and helper text are shown. Off = Challenge. */
+  learnMode: boolean;
   /** Seen the welcome screen at least once. */
   onboarded: boolean;
   /** Lesson ids the user has completed. */
@@ -22,7 +23,7 @@ export interface Preferences {
 
 const DEFAULT_PREFS: Preferences = {
   debugMode: false,
-  beginnerMode: true,
+  learnMode: true,
   onboarded: false,
   lessonsDone: [],
   confirmCritical: true,
@@ -57,7 +58,13 @@ export class PersistenceService {
     try {
       const raw = localStorage.getItem(PREFS_KEY);
       if (!raw) return { ...DEFAULT_PREFS };
-      return { ...DEFAULT_PREFS, ...(JSON.parse(raw) as Partial<Preferences>) };
+      const stored = JSON.parse(raw) as Partial<Preferences> & { beginnerMode?: boolean };
+      // Migrate the old `beginnerMode` key to `learnMode`.
+      if (stored.learnMode === undefined && stored.beginnerMode !== undefined) {
+        stored.learnMode = stored.beginnerMode;
+      }
+      delete stored.beginnerMode;
+      return { ...DEFAULT_PREFS, ...stored };
     } catch {
       return { ...DEFAULT_PREFS };
     }

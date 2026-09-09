@@ -6,7 +6,7 @@ test.use({ ...devices['Pixel 7'] });
 test('the app is usable on a phone-sized screen', async ({ page }) => {
     const errors = collectErrors(page);
     await page.addInitScript(() =>
-      localStorage.setItem('nol.prefs.v1', JSON.stringify({ onboarded: true, beginnerMode: true })),
+      localStorage.setItem('nol.prefs.v1', JSON.stringify({ onboarded: true, learnMode: true })),
     );
     await page.goto('/');
     await expect(page.locator('app-csf-strip .csf').first()).toBeVisible({ timeout: 20_000 });

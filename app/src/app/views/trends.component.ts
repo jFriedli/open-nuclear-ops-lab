@@ -52,8 +52,7 @@ const WINDOWS = [
             <span [style.color]="color(k)">■ {{ label(k) }} - <b class="num">{{ current(k) }}</b> {{ units(k) }}</span>
           }
         </div>
-        <p class="dim sm">History is kept in memory only and is bounded; the oldest samples are
-          decimated once the buffer is full. Trends reset when a new scenario is loaded.</p>
+        <p class="dim sm">Trends reset when a new scenario is loaded.</p>
       </section>
     </div>
   `,

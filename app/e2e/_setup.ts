@@ -2,14 +2,14 @@ import type { Page } from '@playwright/test';
 
 /**
  * Navigate to the app with the first-run welcome screen already dismissed and
- * beginner helpers on (their default). Keeps specs focused on behaviour.
+ * Learn mode on (its default). Keeps specs focused on behaviour.
  */
 export async function open(page: Page, url = '/'): Promise<void> {
   await page.addInitScript(() => {
     try {
       localStorage.setItem(
         'nol.prefs.v1',
-        JSON.stringify({ onboarded: true, beginnerMode: true }),
+        JSON.stringify({ onboarded: true, learnMode: true }),
       );
     } catch {
       /* ignore */

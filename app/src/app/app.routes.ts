@@ -28,6 +28,12 @@ export const routes: Routes = [
     loadComponent: () => import('./views/electrical.component').then((m) => m.ElectricalComponent),
   },
   {
+    path: 'containment',
+    title: 'Containment & Safeguards',
+    loadComponent: () =>
+      import('./views/containment.component').then((m) => m.ContainmentComponent),
+  },
+  {
     path: 'alarms',
     title: 'Alarm Console',
     loadComponent: () => import('./views/alarms.component').then((m) => m.AlarmsComponent),

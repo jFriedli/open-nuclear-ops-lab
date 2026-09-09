@@ -87,12 +87,7 @@ const INJECTIONS: { label: string; target: string; action: string; value: number
       </section>
 
       <section class="panel instr">
-        <h2>Instructor / debug - manual fault injection</h2>
-        <div class="disclaimer">
-          This panel is an <strong>instructor / debugging tool</strong>, not an operator control.
-          Injected faults take effect immediately at the current simulation time and are layered on
-          top of any running scenario.
-        </div>
+        <h2>Instructor - manual fault injection</h2>
         <div class="chips">
           @for (inj of injections; track inj.label) {
             <button (click)="quickInject(inj)" [title]="inj.target + ' ' + inj.action + ' ' + inj.value">
@@ -137,8 +132,7 @@ const INJECTIONS: { label: string; target: string; action: string; value: number
 
       <section class="panel">
         <h2>Import / export scenario JSON</h2>
-        <p class="dim sm">Imported files are validated (structure, ranges, target/action vocabulary)
-          before being handed to the engine. Nothing is uploaded anywhere.</p>
+        <p class="dim sm">Imported files are validated before use.</p>
         <textarea [(ngModel)]="importText" rows="8" placeholder="Paste scenario JSON here"></textarea>
         <div class="row">
           <button (click)="importScenario()">Validate &amp; import</button>

@@ -32,6 +32,10 @@ export const TREND_VARS: TrendVar[] = [
   { key: 'generator_mw', label: 'Generator output', units: 'MW', color: '#ffe98a', group: 'Turbine' },
   { key: 'condenser_pressure', label: 'Condenser backpressure', units: 'kPa', color: '#d29a9a', group: 'Turbine' },
   { key: 'battery_charge', label: 'Station battery', units: '%', color: '#9affb0', group: 'Electrical' },
+  { key: 'boron_ppm', label: 'Coolant boron', units: 'ppm', color: '#b0c4de', group: 'Safeguards' },
+  { key: 'cnmt_pressure', label: 'Containment pressure', units: 'kPa', color: '#ff8fa3', group: 'Safeguards' },
+  { key: 'cnmt_temp', label: 'Containment temperature', units: '°C', color: '#ffb38f', group: 'Safeguards' },
+  { key: 'cnmt_sump', label: 'Containment sump level', units: '%', color: '#8fb3ff', group: 'Safeguards' },
 ];
 
 const MAX_POINTS = 18000;

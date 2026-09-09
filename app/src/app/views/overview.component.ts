@@ -103,8 +103,8 @@ import { ViewBase } from './view-base';
         </svg>
       </div>
       <div class="legend dim">
-        Click any component to open its detail view. Animated flow indicates the loop is
-        circulating; a red vessel/turbine means tripped. All values are HMI (indicated) values.
+        Click any component to open its detail view. Animated pipes mean the loop is circulating;
+        red means tripped.
       </div>
     </div>
   `,

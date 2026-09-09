@@ -333,6 +333,35 @@ fn apply_event(
                 inputs.reactor_trip = true;
             }
         }
+        // Loss-of-coolant break. `value` = break size 0..1 (default 0.4).
+        ["loca"] | ["valve", "break"] => {
+            if active {
+                let size = if ev.value > 0.0 { ev.value } else { 0.4 };
+                inputs.loca_break = Some((size * prog).clamp(0.0, 1.0));
+            }
+        }
+        // Manual / scenario safety-injection signal.
+        ["si"] => {
+            if active && matches!(ev.action.as_str(), "trip" | "start" | "set" | "actuate") {
+                inputs.si_signal = true;
+            }
+        }
+        ["cnmt", "spray"] => {
+            if active {
+                inputs.cnmt_spray_cmd = Some(bool_action(ev));
+            }
+        }
+        ["cnmt", "isolate"] | ["cnmt", "isolation"] => {
+            if active {
+                inputs.cnmt_isolate_cmd = Some(bool_action(ev));
+            }
+        }
+        // Operator boration / dilution, ppm per second (+ borate, - dilute).
+        ["boron"] => {
+            if active {
+                inputs.boron_rate_ppm_s += ev.value * prog;
+            }
+        }
         ["instrument", rest @ ..] => {
             let target = rest.join(".");
             let sigkey = rest.first().copied().unwrap_or("");

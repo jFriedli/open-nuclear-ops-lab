@@ -11,7 +11,7 @@ import { SimService } from '../sim/sim.service';
   imports: [FormsModule, ReadoutComponent, BarComponent, PillComponent, MiniTrendComponent],
   template: `
     <div class="grid cols">
-      <section class="panel">
+      <section class="panel" id="w-rcp">
         <h2>Reactor coolant pumps</h2>
         @for (i of [0, 1, 2, 3]; track i) {
           <div class="rcp">
@@ -28,7 +28,7 @@ import { SimService } from '../sim/sim.service';
         @if (!acPower()) { <p class="dim">RCPs require off-site power or the main generator - not available.</p> }
       </section>
 
-      <section class="panel">
+      <section class="panel" id="w-pzr">
         <h2>Pressure &amp; pressurizer</h2>
         <nol-readout label="Primary pressure" [value]="h('primary_pressure')" units="MPa" [dp]="2"
           [deviation]="dev('primary_pressure')" [flag]="faultFlag('primary_pressure')"
@@ -59,7 +59,7 @@ import { SimService } from '../sim/sim.service';
         <div class="mt"><nol-mini-trend [keys]="['primary_pressure', 'pzr_level']" /></div>
       </section>
 
-      <section class="panel">
+      <section class="panel" id="w-loop-temps">
         <h2>Loop temperatures</h2>
         <nol-readout label="T-avg" [value]="h('t_avg')" units="°C" [dp]="1" [deviation]="dev('t_avg')" />
         <nol-readout label="Hot leg" [value]="h('t_hot')" units="°C" [dp]="1" />

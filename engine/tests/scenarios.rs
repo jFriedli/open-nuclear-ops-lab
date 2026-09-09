@@ -68,6 +68,7 @@ const SCENARIOS: &[(&str, &str)] = &[
         "sigbias",
         include_str!("../../scenarios/signal-bias-pressure.json"),
     ),
+    ("sloca", include_str!("../../scenarios/small-loca.json")),
 ];
 
 fn finite(v: &Value) -> bool {
@@ -187,6 +188,55 @@ fn loop_scenario_meets_acceptance_criteria() {
     c.step((75.0 / c.dt()).round() as u32);
     c.action(r#"{"type":"ack_all"}"#);
     assert_eq!(c.snapshot(), e.snapshot(), "replay diverged");
+}
+
+#[test]
+fn small_loca_trips_the_reactor_and_actuates_safety_injection() {
+    let json = include_str!("../../scenarios/small-loca.json");
+    let mut e = Engine::new(json, 4242.0).unwrap();
+    e.set_debug(true);
+
+    // Before the break: stable, no safeguards.
+    e.step((25.0 / e.dt()).round() as u32);
+    let s0: Value = serde_json::from_str(&e.snapshot()).unwrap();
+    assert!(!s0["controllers"]["reactor_trip_latched"].as_bool().unwrap());
+    assert!(!s0["controllers"]["si_latched"].as_bool().unwrap());
+    assert!(s0["safety"]["cnmt_pressure"].as_f64().unwrap() < 1.0);
+
+    // Ride out the transient.
+    e.step((240.0 / e.dt()).round() as u32);
+    let s1: Value = serde_json::from_str(&e.snapshot()).unwrap();
+
+    assert!(
+        s1["controllers"]["reactor_trip_latched"].as_bool().unwrap(),
+        "reactor did not trip on the LOCA"
+    );
+    assert!(
+        s1["controllers"]["si_latched"].as_bool().unwrap(),
+        "safety injection never actuated"
+    );
+    assert!(
+        s1["controllers"]["cnmt_isolation_latched"]
+            .as_bool()
+            .unwrap(),
+        "containment did not isolate"
+    );
+    let cnmt = s1["safety"]["cnmt_pressure"].as_f64().unwrap();
+    assert!(
+        cnmt > 5.0 && cnmt < 400.0,
+        "containment pressure implausible: {cnmt} kPa"
+    );
+    assert!(
+        s1["safety"]["boron_ppm"].as_f64().unwrap() > 905.0,
+        "boron did not rise with borated injection"
+    );
+    assert!(
+        s1["safety"]["cnmt_sump"].as_f64().unwrap() > 1.0,
+        "no coolant collected in the containment sump"
+    );
+    // Fission is shut down; decay heat remains.
+    assert!(s1["physical"]["neutron_power"].as_f64().unwrap() < 0.05);
+    assert!(s1["physical"]["decay_heat"].as_f64().unwrap() > 0.012);
 }
 
 #[test]

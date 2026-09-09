@@ -73,6 +73,37 @@ const DK_GAIN: [f64; 3] = [0.003, 2.5e-4, 1.65e-5];
 /// Natural-circulation flow fraction when all RCPs are off (thermosyphon).
 const NATCIRC_FLOW: f64 = 0.06;
 
+/// ---- Primary chemistry / CVCS (fictional teaching values) ----
+/// Reactivity worth of soluble boron (dk/k per ppm). Negative.
+const BORON_WORTH_PPM: f64 = -7.5e-6;
+/// Boron concentration the `rho_bias` calibration implicitly assumes (ppm). The
+/// explicit boron term is exactly zero here, so the reference states stay
+/// critical and existing behaviour is unchanged.
+const BORON_REF_PPM: f64 = 900.0;
+/// Boron concentration of the borated makeup / SI / accumulator water (ppm).
+const BORATED_SOURCE_PPM: f64 = 2400.0;
+/// Mixing gain for injected borated water into the lumped primary (per unit of
+/// normalized injection flow, per second).
+const BORON_MIX_GAIN: f64 = 0.9;
+
+/// ---- Safety injection / accumulators ----
+/// Passive accumulator injection setpoint on primary pressure (MPa).
+const ACCUM_PRESS: f64 = 4.2;
+/// Accumulator discharge flow (fraction-of-rated units) and total deliverable
+/// inventory in the same units·seconds.
+const ACCUM_FLOW: f64 = 0.05;
+const ACCUM_INVENTORY: f64 = 6.0;
+/// High-head SI pump delivery when actuated and powered (fraction-of-rated).
+const SI_PUMP_FLOW: f64 = 0.012;
+
+/// ---- Containment (very simplified single-volume) ----
+/// Pressure rise (kPa) per unit of released coolant-energy flow.
+const CNMT_RELEASE_GAIN: f64 = 260.0;
+/// Passive structural-heat-sink pressure relaxation rate (per second).
+const CNMT_PASSIVE_RELAX: f64 = 0.05;
+/// Additional relaxation rate with containment spray running.
+const CNMT_SPRAY_RELAX: f64 = 0.9;
+
 #[derive(Clone, Debug, Serialize)]
 pub struct SteamGenerator {
     /// Secondary-side water inventory (fraction of nominal).
@@ -102,6 +133,7 @@ pub struct PhysicalState {
     pub rho_fuel: f64,
     pub rho_mod: f64,
     pub rho_xenon: f64,
+    pub rho_boron: f64,
     pub rho_external: f64,
     pub rho_scram: f64,
     /// Control-rod bank position, 0.0 = fully inserted, 1.0 = fully withdrawn.
@@ -165,6 +197,32 @@ pub struct PhysicalState {
     /// Condenser cooling effectiveness (1.0 = design).
     pub condenser_effectiveness: f64,
 
+    // ---- Primary chemistry / makeup (simplified CVCS) ----
+    /// Coolant boron concentration (ppm). Adds negative reactivity.
+    pub boron_ppm: f64,
+    /// Charging pump flow demand (0..1) and letdown (0..1).
+    pub charging: f64,
+    pub letdown: f64,
+    /// Safety-injection actuation (commanded by the protection layer) and the
+    /// accumulator inventory remaining (fraction).
+    pub si_active: bool,
+    pub accumulator_frac: f64,
+    /// Current total SI + accumulator injection flow (fraction-of-rated units).
+    pub si_flow: f64,
+    /// Primary coolant lost to containment through a break or relief path
+    /// (fraction-of-rated units).
+    pub primary_leak: f64,
+
+    // ---- Containment (very simplified) ----
+    /// Containment pressure (kPa gauge; ~0 normal).
+    pub cnmt_pressure: f64,
+    /// Containment atmosphere temperature (degC).
+    pub cnmt_temp: f64,
+    /// Containment sump level (%; rises with released coolant).
+    pub cnmt_sump: f64,
+    pub cnmt_spray: bool,
+    pub cnmt_isolated: bool,
+
     // ---- Electrical ----
     pub grid_available: bool,
     pub offsite_power: bool,
@@ -223,6 +281,20 @@ pub struct PhysicsInputs {
     /// Manual generator breaker command from the operator.
     pub generator_connect: Option<bool>,
     pub load_demand_cmd: Option<f64>,
+
+    // ---- CVCS / safety-injection / containment demands (from CONTROL) ----
+    /// Charging and letdown valve demands (0..1). `None` = hold last value.
+    pub charging_cmd: Option<f64>,
+    pub letdown_cmd: Option<f64>,
+    /// Commanded change in coolant boron (ppm/s): + borate, - dilute.
+    pub boron_rate_ppm_s: f64,
+    /// Safety-injection actuation signal (latched by the protection layer).
+    pub si_signal: bool,
+    /// Containment isolation and spray commands. `None` = leave as-is.
+    pub cnmt_isolate_cmd: Option<bool>,
+    pub cnmt_spray_cmd: Option<bool>,
+    /// Loss-of-coolant break size (0..1) forced by a scenario event.
+    pub loca_break: Option<f64>,
 }
 
 fn t_sat(pressure_mpa: f64) -> f64 {
@@ -273,6 +345,10 @@ impl PhysicalState {
         s.load_demand = 1.0;
         s.condenser_pressure = 5.0;
         s.condenser_effectiveness = 1.0;
+        s.boron_ppm = BORON_REF_PPM;
+        s.charging = 0.30;
+        s.letdown = 0.30;
+        s.accumulator_frac = 1.0;
         s.grid_available = true;
         s.offsite_power = true;
         s.essential_bus_energized = true;
@@ -333,6 +409,7 @@ impl PhysicalState {
             rho_fuel: 0.0,
             rho_mod: 0.0,
             rho_xenon: 0.0,
+            rho_boron: 0.0,
             rho_external: 0.0,
             rho_scram: 0.0,
             rod_pos: 0.72,
@@ -365,6 +442,18 @@ impl PhysicalState {
             turbine_tripped: false,
             condenser_pressure: 5.0,
             condenser_effectiveness: 1.0,
+            boron_ppm: BORON_REF_PPM,
+            charging: 0.30,
+            letdown: 0.30,
+            si_active: false,
+            accumulator_frac: 1.0,
+            si_flow: 0.0,
+            primary_leak: 0.0,
+            cnmt_pressure: 0.0,
+            cnmt_temp: 30.0,
+            cnmt_sump: 0.0,
+            cnmt_spray: false,
+            cnmt_isolated: false,
             grid_available: true,
             offsite_power: true,
             essential_bus_energized: true,
@@ -389,6 +478,7 @@ impl PhysicalState {
         self.rho_fuel = ALPHA_FUEL * (self.t_fuel - T_FUEL_REF);
         self.rho_mod = ALPHA_MOD * (self.t_mod - T_MOD_REF);
         self.rho_xenon = -XE_WORTH * (self.xenon - 1.0);
+        self.rho_boron = BORON_WORTH_PPM * (self.boron_ppm - BORON_REF_PPM);
         self.rho_external = inp.rho_external;
         // Scram worth is held for as long as the reactor is tripped, not just
         // while the rods are physically dropping.
@@ -401,6 +491,7 @@ impl PhysicalState {
             + self.rho_fuel
             + self.rho_mod
             + self.rho_xenon
+            + self.rho_boron
             + self.rho_external
             + self.rho_scram;
     }
@@ -512,10 +603,16 @@ impl PhysicalState {
         self.pzr_level += DT * (12.0 * insurge + 0.02 * (55.0 - self.pzr_level));
         // Relief-valve outsurge also lowers level.
         self.pzr_level -= DT * 6.0 * self.porv;
+        // CVCS makeup, safety injection and any loss of coolant.
+        self.pzr_level += DT
+            * (2.5 * (self.charging - self.letdown) + 18.0 * self.si_flow
+                - 55.0 * self.primary_leak);
         self.pzr_level = self.pzr_level.clamp(0.0, 100.0);
         let dp = 1.6 * (self.pzr_heater_frac - 0.25)     // heaters push up
             - 4.0 * self.pzr_spray_frac                  // spray pulls down
             - 9.0 * self.porv                            // relief pulls down
+            + 3.5 * self.si_flow                         // injection repressurises
+            - 45.0 * self.primary_leak                   // break depressurises
             + 6.0 * insurge                              // insurge compresses steam bubble
             - 0.30 * (self.primary_pressure - 15.5); // self-restoring bubble
         self.primary_pressure += DT * dp.clamp(-2.5, 2.5);
@@ -733,6 +830,81 @@ impl PhysicalState {
         }
     }
 
+    /// CVCS makeup, boron, safety injection / accumulators and the
+    /// loss-of-coolant path. Runs before the thermal step so the pressurizer
+    /// and pressure model can see the makeup / injection / leak flows, and
+    /// before `update_reactivity` so the boron term is current.
+    fn step_safety(&mut self, inp: &PhysicsInputs) {
+        // Containment isolation / spray commands from the protection layer.
+        if let Some(v) = inp.cnmt_isolate_cmd {
+            self.cnmt_isolated = v;
+        }
+        if let Some(v) = inp.cnmt_spray_cmd {
+            self.cnmt_spray = v;
+        }
+
+        // Safety injection is commanded by CONTROL; accumulators are passive.
+        self.si_active = inp.si_signal;
+        let si_pump = if self.si_active && self.essential_bus_energized {
+            SI_PUMP_FLOW
+        } else {
+            0.0
+        };
+        let accum = if self.primary_pressure < ACCUM_PRESS && self.accumulator_frac > 1e-4 {
+            ACCUM_FLOW
+        } else {
+            0.0
+        };
+        self.accumulator_frac = (self.accumulator_frac - DT * accum / ACCUM_INVENTORY).max(0.0);
+        self.si_flow = si_pump + accum;
+
+        // CVCS charging / letdown demands.
+        self.charging = inp.charging_cmd.unwrap_or(self.charging).clamp(0.0, 1.0);
+        self.letdown = inp.letdown_cmd.unwrap_or(self.letdown).clamp(0.0, 1.0);
+        if self.cnmt_isolated {
+            self.letdown = 0.0; // letdown line isolates on a containment phase-A signal
+        }
+        if self.si_active {
+            self.charging = 1.0; // charging aligns to the SI header on actuation
+        }
+
+        // Loss-of-coolant path: a scenario break plus pressurizer relief flow,
+        // both discharging into containment.
+        let brk = inp.loca_break.unwrap_or(0.0).clamp(0.0, 1.0);
+        let break_flow = brk * 0.085 * (self.primary_pressure / 15.5).max(0.05).sqrt();
+        self.primary_leak = break_flow + 0.02 * self.porv;
+
+        // Boron mixing: injected borated water pulls concentration toward the
+        // source value; the operator can also borate / dilute directly. Normal
+        // charging is blended at the current concentration (no net change).
+        self.boron_ppm += DT
+            * (inp.boron_rate_ppm_s
+                + self.si_flow * BORON_MIX_GAIN * (BORATED_SOURCE_PPM - self.boron_ppm));
+        self.boron_ppm = self.boron_ppm.clamp(0.0, 4000.0);
+    }
+
+    /// Single-volume containment: pressure and temperature rise with any
+    /// coolant released from the primary, and relax through passive heat sinks
+    /// and (if running and powered) containment spray.
+    fn step_containment(&mut self) {
+        let spray_effective = self.cnmt_spray && self.essential_bus_energized;
+        let relax = CNMT_PASSIVE_RELAX
+            + if spray_effective {
+                CNMT_SPRAY_RELAX
+            } else {
+                0.0
+            };
+        let dp = CNMT_RELEASE_GAIN * self.primary_leak - relax * self.cnmt_pressure;
+        self.cnmt_pressure = (self.cnmt_pressure + DT * dp).clamp(0.0, 800.0);
+
+        let t_target = 30.0 + 0.35 * self.cnmt_pressure;
+        let t_tau = if spray_effective { 20.0 } else { 70.0 };
+        self.cnmt_temp += DT * (t_target - self.cnmt_temp) / t_tau;
+
+        self.cnmt_sump += DT * (self.primary_leak * 9.0 + self.si_flow * 3.0);
+        self.cnmt_sump = self.cnmt_sump.clamp(0.0, 100.0);
+    }
+
     fn step_rods(&mut self, inp: &PhysicsInputs) {
         if inp.reactor_trip && !self.reactor_tripped {
             self.reactor_tripped = true;
@@ -755,6 +927,7 @@ impl PhysicalState {
     pub fn step(&mut self, inp: &PhysicsInputs) {
         self.apply_overrides(inp);
         self.step_rods(inp);
+        self.step_safety(inp);
         self.update_reactivity(inp);
         self.step_neutronics();
         self.step_decay_heat();
@@ -763,6 +936,7 @@ impl PhysicalState {
         self.step_secondary(inp);
         self.step_turbine(inp);
         self.step_electrical(inp);
+        self.step_containment();
 
         // AFW auto-actuation on low SG level (physical actuation logic lives in
         // the protection layer, but the pump response is physical).

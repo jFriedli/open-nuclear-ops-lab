@@ -25,6 +25,13 @@ pub mod sp {
     pub const TURB_OVERSPEED_TRIP: f64 = 106.0; // %
     pub const COND_PRESS_HI_TRIP: f64 = 20.0; // kPa
     pub const SG_HI_TURB_TRIP: f64 = 85.0; // %
+    /// Safety-injection actuation on low primary pressure (MPa).
+    pub const SI_PRESS_LO: f64 = 11.5;
+    /// Containment pressure (kPa gauge): high alarm, SI / phase-A isolation,
+    /// and containment-spray actuation.
+    pub const CNMT_PRESS_HI: f64 = 15.0;
+    pub const CNMT_PRESS_SI: f64 = 20.0;
+    pub const CNMT_PRESS_SPRAY: f64 = 140.0;
 }
 
 #[derive(Clone, Debug, Serialize, PartialEq)]
@@ -39,12 +46,17 @@ pub struct ControllerState {
     pub mode_pzr_auto: bool,
     pub mode_fw_auto: bool,
     pub mode_turbine_auto: bool,
+    pub mode_cvcs_auto: bool,
     pub rod_error: f64,
     pub pzr_press_error: f64,
     pub fw_error: [f64; 2],
     pub target_power: f64,
     pub reactor_trip_latched: bool,
     pub turbine_trip_latched: bool,
+    /// Safety-injection and containment protection latches.
+    pub si_latched: bool,
+    pub cnmt_isolation_latched: bool,
+    pub cnmt_spray_latched: bool,
     // integrator terms
     i_rod: f64,
     i_fw: [f64; 2],
@@ -57,11 +69,15 @@ pub struct Controllers {
 /// Operator demands that persist between steps (set-and-hold controls).
 #[derive(Clone, Debug, Serialize)]
 pub struct OperatorDemands {
-    pub rod_manual_speed: f64,  // fraction/s when rod control in manual
-    pub target_power_pct: f64,  // auto rod control target
-    pub target_load_pct: f64,   // turbine load target
-    pub pzr_setpoint: f64,      // MPa
-    pub sg_level_setpoint: f64, // %
+    pub rod_manual_speed: f64,   // fraction/s when rod control in manual
+    pub target_power_pct: f64,   // auto rod control target
+    pub target_load_pct: f64,    // turbine load target
+    pub pzr_setpoint: f64,       // MPa
+    pub sg_level_setpoint: f64,  // %
+    pub pzr_level_setpoint: f64, // % — CVCS charging/letdown target
+    pub charging_manual: f64,    // 0..1 when CVCS in manual
+    pub letdown_manual: f64,     // 0..1 when CVCS in manual
+    pub boron_rate: f64,         // ppm/s: + borate, - dilute
     pub generator_connect: bool,
     pub manual_reactor_trip: bool,
     pub manual_turbine_trip: bool,
@@ -76,6 +92,10 @@ impl Default for OperatorDemands {
             target_load_pct: 100.0,
             pzr_setpoint: 15.5,
             sg_level_setpoint: 65.0,
+            pzr_level_setpoint: 55.0,
+            charging_manual: 0.30,
+            letdown_manual: 0.30,
+            boron_rate: 0.0,
             generator_connect: true,
             manual_reactor_trip: false,
             manual_turbine_trip: false,
@@ -98,6 +118,7 @@ impl Controllers {
                 mode_pzr_auto: true,
                 mode_fw_auto: true,
                 mode_turbine_auto: true,
+                mode_cvcs_auto: true,
                 target_power: 100.0,
                 ..Default::default()
             },
@@ -126,12 +147,59 @@ impl Controllers {
         let flow = m.get("primary_flow");
         let turb_speed = m.get("turbine_speed");
         let cond = m.get("condenser_pressure");
+        let cnmt_press = m.get("cnmt_pressure");
+
+        // Direct containment-system commands from a scenario / instructor event.
+        if let Some(v) = scenario_inputs.cnmt_isolate_cmd {
+            st.cnmt_isolation_latched = v;
+        }
+        if let Some(v) = scenario_inputs.cnmt_spray_cmd {
+            st.cnmt_spray_latched = v;
+        }
+
+        // ---- SAFETY INJECTION actuation (latching) ----
+        let si_reason: Option<String> = if scenario_inputs.si_signal {
+            Some("Scenario safety-injection signal".into())
+        } else if press < sp::SI_PRESS_LO {
+            Some(format!("Low primary pressure {press:.2} MPa"))
+        } else if cnmt_press > sp::CNMT_PRESS_SI {
+            Some(format!("High containment pressure {cnmt_press:.0} kPa"))
+        } else {
+            None
+        };
+        if let Some(reason) = si_reason {
+            if !st.si_latched {
+                st.si_latched = true;
+                events.push(ProtectionEvent {
+                    kind: "actuation".into(),
+                    reason: format!("Safety injection: {reason}"),
+                });
+            }
+        }
+        // Containment phase-A isolation follows the SI signal or high pressure.
+        if (st.si_latched || cnmt_press > sp::CNMT_PRESS_SI) && !st.cnmt_isolation_latched {
+            st.cnmt_isolation_latched = true;
+            events.push(ProtectionEvent {
+                kind: "actuation".into(),
+                reason: "Containment isolation (phase A)".into(),
+            });
+        }
+        // Containment spray on high-high containment pressure.
+        if cnmt_press > sp::CNMT_PRESS_SPRAY && !st.cnmt_spray_latched {
+            st.cnmt_spray_latched = true;
+            events.push(ProtectionEvent {
+                kind: "actuation".into(),
+                reason: format!("Containment spray: high pressure {cnmt_press:.0} kPa"),
+            });
+        }
 
         let mut rx_trip_reason: Option<String> = None;
         if op.manual_reactor_trip {
             rx_trip_reason = Some("Manual reactor trip".into());
         } else if scenario_inputs.reactor_trip {
             rx_trip_reason = Some("Scenario reactor trip".into());
+        } else if st.si_latched {
+            rx_trip_reason = Some("Reactor trip on safety injection".into());
         } else if power > sp::NEUTRON_HI_TRIP {
             rx_trip_reason = Some(format!("High neutron power {power:.0}%"));
         } else if press > sp::PRESS_HI_TRIP {
@@ -270,6 +338,26 @@ impl Controllers {
             ((sgp - 7.6) * 1.5).clamp(0.0, 1.0)
         };
         out.steam_dump_cmd = dump;
+
+        // ---------------- CVCS / CHEMISTRY / SAFETY INJECTION ---------------
+        out.si_signal = st.si_latched;
+        out.cnmt_isolate_cmd = Some(st.cnmt_isolation_latched);
+        out.cnmt_spray_cmd = Some(st.cnmt_spray_latched);
+        out.boron_rate_ppm_s = op.boron_rate;
+
+        if st.si_latched {
+            // Safety injection overrides normal makeup: charge hard, no letdown.
+            out.charging_cmd = Some(1.0);
+            out.letdown_cmd = Some(0.0);
+        } else if st.mode_cvcs_auto {
+            let lvl = m.get("pzr_level");
+            let err = op.pzr_level_setpoint - lvl;
+            out.charging_cmd = Some((0.30 + 0.03 * err).clamp(0.0, 1.0));
+            out.letdown_cmd = Some((0.30 - 0.03 * err).clamp(0.0, 1.0));
+        } else {
+            out.charging_cmd = Some(op.charging_manual.clamp(0.0, 1.0));
+            out.letdown_cmd = Some(op.letdown_manual.clamp(0.0, 1.0));
+        }
 
         (out, events)
     }

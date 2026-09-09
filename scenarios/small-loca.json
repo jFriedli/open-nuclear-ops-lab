@@ -1,0 +1,17 @@
+{
+  "id": "small-loca",
+  "name": "Small-Break Loss of Coolant Accident",
+  "description": "A small break opens in the reactor coolant system. Primary pressure and pressurizer level fall despite full charging; the reactor trips on low pressurizer level, safety injection actuates automatically on low primary pressure, coolant is released into containment and containment pressure rises. The operator confirms the safeguards line-up and monitors containment.",
+  "initial": "hot_full_power",
+  "seed": 20260909,
+  "briefing": "You are at ~100% power. At t+30 s a small primary break develops. Verify the automatic response: low-pressurizer-level reactor trip, low-pressure safety injection, containment phase-A isolation. Confirm accumulator and high-head SI flow, watch boron rise, and keep containment pressure in view. Acknowledge alarms as they arrive.",
+  "learning_objectives": [
+    "Recognise a loss-of-coolant event from falling pressure and level with rising charging demand",
+    "Follow the safeguards sequence: reactor trip -> safety injection -> containment isolation",
+    "Understand passive accumulator injection versus powered high-head SI",
+    "Track the fission-product barriers: fuel, primary boundary, containment"
+  ],
+  "events": [
+    { "time": 30, "target": "loca", "action": "start", "value": 0.42, "label": "Small primary-system break (loss of coolant)" }
+  ]
+}

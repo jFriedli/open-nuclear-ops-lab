@@ -35,16 +35,6 @@
   color: var(--accent);
   font-size: 13px;
 }
-.brand .edu {
-  font-size: 10px;
-  color: var(--warn);
-  border: 1px solid color-mix(in srgb, var(--warn) 45%, transparent);
-  border-radius: 3px;
-  padding: 0 4px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  cursor: help;
-}
 
 .clockbox,
 .statusbox,

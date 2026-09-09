@@ -110,6 +110,30 @@ test('a session can be exported and replayed deterministically', async ({ page }
   expect(errors).toEqual([]);
 });
 
+test('a small LOCA actuates safety injection and pressurises containment', async ({ page }) => {
+  const errors = errs(page);
+  await open(page);
+  await expect(page.locator('app-csf-strip .csf').first()).toBeVisible({ timeout: 20_000 });
+
+  await page.getByRole('link', { name: 'Scenario / Instructor', exact: true }).click();
+  await page.getByText('Small-Break Loss of Coolant Accident').click();
+  await page.getByRole('button', { name: /START SCENARIO/ }).click();
+  await page.getByRole('button', { name: '10×', exact: true }).click();
+
+  // Break at t+30 s; give it real time to depressurise and actuate safeguards.
+  await page.getByRole('link', { name: 'Containment & Safeguards', exact: true }).click();
+  await expect(page.getByText('ACTUATED', { exact: true })).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('nol-readout', { hasText: 'Containment pressure' })).toContainText(
+    'kPa',
+  );
+
+  // The reactor tripped on the safeguards sequence.
+  await page.getByRole('link', { name: 'Reactor', exact: true }).click();
+  await expect(page.getByText('TRIPPED', { exact: true })).toBeVisible({ timeout: 20_000 });
+
+  expect(errors).toEqual([]);
+});
+
 test('trends view records and plots selected variables', async ({ page }) => {
   const errors = errs(page);
   await open(page);

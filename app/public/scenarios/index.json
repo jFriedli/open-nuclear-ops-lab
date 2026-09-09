@@ -134,5 +134,13 @@
     "description": "The main turbine trips from full load. Steam dump to the condenser opens, secondary pressure rises, and the reactor trips on the anticipatory turbine-trip signal at high power.",
     "initial": "hot_full_power",
     "events": 1
+  },
+  {
+    "file": "small-loca.json",
+    "id": "small-loca",
+    "name": "Small-Break Loss of Coolant Accident",
+    "description": "A small break opens in the reactor coolant system. Primary pressure and pressurizer level fall despite full charging; the reactor trips on low pressurizer level, safety injection actuates automatically on low primary pressure, coolant is released into containment and containment pressure rises. The operator confirms the safeguards line-up and monitors containment.",
+    "initial": "hot_full_power",
+    "events": 1
   }
 ]

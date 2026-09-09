@@ -28,13 +28,15 @@ control-system failure from an operator error.**
 | ![Reactor](docs/screenshots/reactor.png) | ![Electrical during a LOOP](docs/screenshots/electrical.png) |
 | ![Alarm console](docs/screenshots/alarms.png) | ![Trends](docs/screenshots/trends.png) |
 | ![HMI-layer fault](docs/screenshots/hmi-fault.png) | ![Critical Safety Functions](docs/screenshots/safety.png) |
+| ![Containment & safeguards during a LOCA](docs/screenshots/containment.png) | ![Learn-mode coach](docs/screenshots/coach.png) |
 
 ### Highlights
 
 - **Deterministic physics engine** in Rust → WebAssembly, running in a Web
   Worker at 50 Hz. Six-group point kinetics, temperature feedback, decay heat,
   xenon, a two-loop primary with pressuriser, two steam generators, turbine /
-  generator, and a simplified electrical system.
+  generator, a simplified electrical system, and a lumped CVCS / boron / safety
+  injection / single-volume containment model for loss-of-coolant events.
 - **Layered by design:** physical process → instrumentation → signal
   processing → control / protection → HMI. Faults inject at any level: a raw
   sensor channel (A/B/C, caught by voting/disagreement), a signal-processing
@@ -48,13 +50,17 @@ control-system failure from an operator error.**
 - **Real alarm model** - latched, prioritised, acknowledgeable, filterable,
   with history. Not toast notifications.
 - **Event / scenario engine** as a first-class subsystem: declarative JSON,
-  12 single-fault + 3 combined scenarios, plus an instructor fault-injection
+  13 single-fault + 3 combined scenarios, plus an instructor fault-injection
   panel. Import your own (validated as untrusted input).
-- **Critical Safety Functions** overview (an educational abstraction, not a
-  real EOP) derived from multiple signals.
+- **Critical Safety Functions** overview derived from multiple signals.
+- **Learn mode vs Challenge mode.** Learn mode adds a contextual coach that
+  reads the live plant and tells a newcomer what to do next — start-up,
+  power manoeuvres, post-trip recovery, loss of coolant. Challenge mode turns
+  all coaching off. Two guided tours (a two-minute first look and a full
+  control-room walkthrough that explains every display and control) and
+  objective-tracked lessons sit on the Learn page.
 - **Trends** with selectable variables and 1 / 5 / 15 min / full-scenario
-  windows; **event log** with simulation timestamps; **educational mode** with
-  self-authored explanations of the major systems.
+  windows; **event log** with simulation timestamps.
 - Pause / single-step / 0.25×–10× clock. Identical scenario + seed + actions
   ⇒ identical outcome.
 - No backend, no auth, no database, no network calls. Preferences in

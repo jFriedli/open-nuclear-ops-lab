@@ -11,8 +11,9 @@ never varied; simulation time is `ticks * DT` and is kept entirely separate
 from wall-clock time.
 
 All state lives in `physics.rs::PhysicalState`. One `step()` call advances,
-in order: rod motion → reactivity → point kinetics → decay heat → xenon →
-thermal-hydraulics → secondary → turbine/generator → electrical.
+in order: rod motion → CVCS / safety-injection / boron → reactivity → point
+kinetics → decay heat → xenon → thermal-hydraulics → secondary →
+turbine/generator → electrical → containment.
 
 ---
 
@@ -50,7 +51,7 @@ Equilibrium precursors used for the initial condition: `Cᵢ = βᵢ / (Λ·λ�
 ## 2. Reactivity balance
 
 ```
-ρ = ρ_rods + ρ_fuel + ρ_mod + ρ_xenon + ρ_external + ρ_scram + ρ_bias
+ρ = ρ_rods + ρ_fuel + ρ_mod + ρ_xenon + ρ_boron + ρ_external + ρ_scram + ρ_bias
 ```
 
 * **Rods** - integral worth over the bank travel `x ∈ [0,1]` (1 = withdrawn):
@@ -62,6 +63,9 @@ Equilibrium precursors used for the initial condition: `Cᵢ = βᵢ / (Λ·λ�
 * **Moderator temperature:** `ρ_mod = α_m·(T_mod − 305)`,
   `α_m = −2.0 × 10⁻⁴ /°C`.
 * **Xenon:** `ρ_xenon = −XE_WORTH·(Xe − 1)`, `XE_WORTH = 0.028`.
+* **Boron:** `ρ_boron = α_b·(C_B − C_B,ref)`, `α_b = −7.5 × 10⁻⁶ /ppm`,
+  `C_B,ref = 900 ppm`. The term is exactly zero at the reference concentration,
+  so `ρ_bias` (and every existing initial condition) is unaffected. See §5a.
 * **External:** injected by scenario events (`physical.rho_external`).
 * **Scram:** `−0.15` (15 000 pcm) held for as long as the reactor is tripped.
 
@@ -128,10 +132,58 @@ Target flow is a step function of running RCPs (4→1.0, 3→0.78, 2→0.55,
 (τ = 8 s coastdown, 3 s runup).
 
 ### Pressuriser / primary pressure
-Level responds to coolant thermal expansion (insurge/outsurge) and to relief
-flow; pressure is driven by heaters (+), spray (−), the relief valve (−),
-insurge compression of the steam bubble (+) and a self-restoring bubble term.
-`dP/dt` is clamped to ±2.5 MPa/s. An automatic PORV modulates above 16.4 MPa.
+Level responds to coolant thermal expansion (insurge/outsurge), to relief
+flow, and to the CVCS / SI / leak flows of §5a; pressure is driven by heaters
+(+), spray (−), the relief valve (−), safety-injection makeup (+), a
+loss-of-coolant break (−), insurge compression of the steam bubble (+) and a
+self-restoring bubble term. `dP/dt` is clamped to ±2.5 MPa/s. An automatic
+PORV modulates above 16.4 MPa.
+
+## 5a. Primary chemistry, safety injection & containment
+
+All fictional teaching values; see [MODEL_LIMITATIONS.md](./MODEL_LIMITATIONS.md).
+
+**CVCS (charging / letdown).** Two demands `∈ [0,1]`. The net makeup
+`charging − letdown` adds to pressuriser level (gain 2.5 %/s at full swing). A
+containment phase-A isolation forces `letdown = 0`; a safety-injection signal
+forces `charging = 1`.
+
+**Boron.** One lumped concentration `C_B` (ppm):
+
+```
+dC_B/dt = boron_rate + f_inj·MIX·(C_B,src − C_B)
+```
+
+`boron_rate` is the operator borate (+) / dilute (−) command (ppm/s),
+`C_B,src = 2400 ppm` is the borated-source concentration, `f_inj` is the SI +
+accumulator flow and `MIX = 0.9`. Normal charging is blended at the current
+concentration and has no net effect.
+
+**Safety injection.** The protection layer (`control.rs`) latches the SI signal
+on low measured primary pressure (< 11.5 MPa) or high containment pressure
+(> 20 kPa); it also trips the reactor. Physics then delivers:
+
+* **High-head SI pumps** — fixed `0.012` (fraction-of-rated) while actuated
+  *and* the essential bus is energised.
+* **Accumulators** — passive `0.05` flow whenever primary pressure < 4.2 MPa,
+  drawn from a finite inventory (`accumulator_frac`, 1 → 0).
+
+**Loss of coolant.** A scenario `loca` / `valve.break` event sets a break
+fraction `b ∈ [0,1]`; the leak to containment is
+`b·0.085·√(P/15.5) + 0.02·PORV` in fraction-of-rated units. It drains
+pressuriser level (gain 55 %/s) and depressurises the primary (45 MPa·s⁻¹ per
+unit).
+
+**Containment (single volume).**
+
+```
+dp_c/dt   = 260·leak − (0.05 + spray·0.9)·p_c        [kPa]
+dT_c/dt   = (30 + 0.35·p_c − T_c) / τ                 τ = 70 s, 20 s with spray
+dsump/dt  = 9·leak + 3·f_inj                          [%]
+```
+
+Spray latches on high-high containment pressure (140 kPa) and needs the
+essential bus. Phase-A isolation latches with the SI signal or at 20 kPa.
 
 ## 6. Secondary / steam generators (×2)
 

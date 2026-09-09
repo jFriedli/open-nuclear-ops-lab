@@ -187,6 +187,48 @@ impl AlarmManager {
                 message: format!("Station battery low {:.0}%", g("battery_charge")),
                 active: g("battery_charge") < 60.0,
             },
+            Cond {
+                id: "SAFETY_INJECTION",
+                priority: 1,
+                subsystem: "Safeguards",
+                message: "SAFETY INJECTION ACTUATED".into(),
+                active: cs.si_latched,
+            },
+            Cond {
+                id: "CNMT_ISOLATION",
+                priority: 1,
+                subsystem: "Containment",
+                message: "Containment isolation (phase A)".into(),
+                active: cs.cnmt_isolation_latched,
+            },
+            Cond {
+                id: "CNMT_SPRAY",
+                priority: 1,
+                subsystem: "Containment",
+                message: "Containment spray actuated".into(),
+                active: cs.cnmt_spray_latched,
+            },
+            Cond {
+                id: "CNMT_PRESS_HI",
+                priority: 1,
+                subsystem: "Containment",
+                message: format!("High containment pressure {:.0} kPa", g("cnmt_pressure")),
+                active: g("cnmt_pressure") > 15.0,
+            },
+            Cond {
+                id: "CNMT_SUMP_HI",
+                priority: 2,
+                subsystem: "Containment",
+                message: format!("Containment sump level {:.0}%", g("cnmt_sump")),
+                active: g("cnmt_sump") > 15.0,
+            },
+            Cond {
+                id: "ACCUM_LO",
+                priority: 2,
+                subsystem: "Safeguards",
+                message: format!("Accumulator inventory low {:.0}%", g("accum_level")),
+                active: g("accum_level") < 35.0,
+            },
             // Instrument channel disagreement (each redundant signal).
             Cond {
                 id: "DEV_NPWR",

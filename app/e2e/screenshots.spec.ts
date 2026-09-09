@@ -72,6 +72,21 @@ test('capture documentation screenshots', async ({ page }) => {
   await page.waitForTimeout(500);
   await page.screenshot({ path: `${SHOTS}/electrical.png` });
 
+  // The learn-mode coach walking the operator through the post-trip checklist.
+  await page.getByRole('link', { name: 'Overview', exact: true }).click();
+  await page.waitForTimeout(400);
+  await page.locator('app-coach-bar .coach').screenshot({ path: `${SHOTS}/coach.png` });
+
+  // The control-room walkthrough spotlighting a panel and its controls.
+  await page.getByRole('link', { name: 'Learn', exact: true }).click();
+  await page.getByRole('button', { name: /Full control-room walkthrough/ }).click();
+  const card = page.locator('app-guide-overlay .card');
+  await expect(card).toBeVisible();
+  for (let i = 0; i < 8; i++) await card.getByRole('button', { name: 'Next' }).click();
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: `${SHOTS}/walkthrough.png` });
+  await card.getByRole('button', { name: 'Skip' }).click();
+
   await page.getByRole('link', { name: 'Alarms', exact: true }).click();
   await page.waitForTimeout(500);
   await page.screenshot({ path: `${SHOTS}/alarms.png` });
@@ -83,6 +98,16 @@ test('capture documentation screenshots', async ({ page }) => {
   await page.getByRole('link', { name: 'Safety Functions', exact: true }).click();
   await page.waitForTimeout(500);
   await page.screenshot({ path: `${SHOTS}/safety.png` });
+
+  // Containment & safeguards during a small-break LOCA.
+  await page.getByRole('link', { name: 'Scenario / Instructor', exact: true }).click();
+  await page.getByText('Small-Break Loss of Coolant Accident').click();
+  await page.getByRole('button', { name: /START SCENARIO/ }).click();
+  await page.getByRole('button', { name: '10×', exact: true }).click();
+  await page.waitForTimeout(9000);
+  await page.getByRole('link', { name: 'Containment & Safeguards', exact: true }).click();
+  await page.waitForTimeout(800);
+  await page.screenshot({ path: `${SHOTS}/containment.png` });
 
   // HMI-layer fault: the indication-integrity banner + a spoofed gauge.
   await page.getByRole('link', { name: 'Scenario / Instructor', exact: true }).click();

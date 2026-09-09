@@ -5,13 +5,6 @@ import { ViewBase } from './view-base';
   selector: 'nol-safety',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="disclaimer">
-      These Critical Safety Functions are an <strong>educational abstraction</strong>. They are
-      <strong>not</strong> real emergency operating criteria, status trees, or safety-function
-      acceptance limits, and must never be used as such. Each status is derived from several
-      simulated signals to illustrate defence-in-depth thinking.
-    </div>
-
     <div class="grid csfgrid">
       @for (c of csf(); track c.name) {
         <section class="panel csf" [class]="'edge-' + c.status.toLowerCase()">
@@ -25,7 +18,7 @@ import { ViewBase } from './view-base';
       }
     </div>
 
-    <div class="panel">
+    <div class="panel" id="w-csf-derivation">
       <h2>How the statuses are derived</h2>
       <table>
         <thead><tr><th>Function</th><th>NORMAL</th><th>DEGRADED</th><th>CHALLENGED</th></tr></thead>
@@ -35,7 +28,7 @@ import { ViewBase } from './view-base';
           <tr><td>Primary inventory</td><td>pzr 25–88%, 14–16.3 MPa</td><td>outside those bands</td><td>pzr &lt; 12% or &lt; 12.5 MPa</td></tr>
           <tr><td>Heat sink</td><td>both SG 35–82%</td><td>a SG outside that band</td><td>a SG &lt; 22%</td></tr>
           <tr><td>Electrical power</td><td>battery ≥ 70%</td><td>battery 30–70%</td><td>battery &lt; 30%</td></tr>
-          <tr><td>Containment / barrier</td><td>pressure ≥ 13.5 MPa, T-avg ≤ 345 °C</td><td>pressure &lt; 13.5 MPa</td><td>pressure &lt; 11 MPa or T-avg &gt; 345 °C</td></tr>
+          <tr><td>Containment / barrier</td><td>primary ≥ 13.5 MPa, T-avg ≤ 345 °C, cnmt ≤ 15 kPa, no SI</td><td>primary &lt; 13.5 MPa, cnmt &gt; 15 kPa, SI or isolation actuated</td><td>primary &lt; 11 MPa, T-avg &gt; 345 °C, cnmt &gt; 100 kPa, or spray running</td></tr>
         </tbody>
       </table>
       <p class="dim sm">UNKNOWN appears when redundant instrument channels disagree enough that the
@@ -93,7 +86,7 @@ export class SafetyComponent extends ViewBase {
     'ELECTRICAL POWER':
       'Power for pumps, valves, instrumentation and control. Off-site supply, the main generator, emergency diesels, and finally the station battery form the defence in depth.',
     'CONTAINMENT / BARRIER STATUS':
-      'A very abstract placeholder in this version: are the barriers between fuel and environment intact? Approximated here from primary pressure and temperature only.',
+      'Are the barriers between fuel and environment intact? Derived from the reactor coolant boundary (primary pressure and temperature), the containment building pressure, and whether safety injection or containment isolation have actuated. See the Containment & Safeguards page.',
   };
   explain(name: string): string {
     return this.notes[name] ?? '';

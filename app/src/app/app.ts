@@ -7,7 +7,7 @@ import { GuideService } from './core/guide.service';
 import { CsfStripComponent } from './ui/csf-strip.component';
 import { GuideOverlayComponent } from './ui/guide-overlay.component';
 import { WelcomeComponent } from './ui/welcome.component';
-import { PlantStatusBarComponent } from './ui/plant-status-bar.component';
+import { CoachBarComponent } from './ui/coach-bar.component';
 import { LessonHudComponent } from './ui/lesson-hud.component';
 import { DebriefComponent } from './ui/debrief.component';
 
@@ -21,7 +21,7 @@ import { DebriefComponent } from './ui/debrief.component';
     CsfStripComponent,
     GuideOverlayComponent,
     WelcomeComponent,
-    PlantStatusBarComponent,
+    CoachBarComponent,
     LessonHudComponent,
     DebriefComponent,
   ],
@@ -48,7 +48,7 @@ export class App implements OnInit {
   });
   readonly unacked = computed(() => this.snap()?.alarm_unacked ?? 0);
   readonly debug = computed(() => this.persistence.prefs().debugMode);
-  readonly beginner = computed(() => this.persistence.prefs().beginnerMode);
+  readonly learn = computed(() => this.persistence.prefs().learnMode);
   readonly hmiFaults = computed(() => this.snap()?.hmi_faulted ?? []);
   readonly signalFaults = computed(() => this.snap()?.signal_faulted ?? []);
 
@@ -58,6 +58,7 @@ export class App implements OnInit {
     { path: 'primary', label: 'Primary' },
     { path: 'secondary', label: 'Secondary / Turbine' },
     { path: 'electrical', label: 'Electrical' },
+    { path: 'containment', label: 'Containment & Safeguards' },
     { path: 'alarms', label: 'Alarms' },
     { path: 'trends', label: 'Trends' },
     { path: 'safety', label: 'Safety Functions' },
@@ -76,12 +77,11 @@ export class App implements OnInit {
     if (!this.persistence.prefs().onboarded) this.showWelcome.set(true);
   }
 
-  onWelcome(choice: 'tour' | 'lessons' | 'explore' | 'expert'): void {
-    this.persistence.updatePrefs({ onboarded: true });
+  onWelcome(choice: 'learn' | 'challenge'): void {
+    this.persistence.updatePrefs({ onboarded: true, learnMode: choice === 'learn' });
     this.showWelcome.set(false);
-    if (choice === 'tour') this.guide.start('basics');
-    else if (choice === 'lessons') void this.router.navigateByUrl('/learn');
-    else if (choice === 'expert') this.persistence.updatePrefs({ beginnerMode: false });
+    if (choice === 'learn') this.guide.start('basics');
+    else void this.router.navigateByUrl('/scenario');
   }
 
   openHelp(): void {
@@ -96,8 +96,8 @@ export class App implements OnInit {
   toggleDebug(): void {
     this.persistence.updatePrefs({ debugMode: !this.persistence.prefs().debugMode });
   }
-  toggleBeginner(): void {
-    this.persistence.updatePrefs({ beginnerMode: !this.persistence.prefs().beginnerMode });
+  toggleLearn(): void {
+    this.persistence.updatePrefs({ learnMode: !this.persistence.prefs().learnMode });
   }
   closeNav(): void {
     this.navOpen.set(false);

@@ -53,6 +53,15 @@ pub enum OperatorAction {
     PzrSpray { value: f64 },
     FwMode { mode: String },
     SgLevelSetpoint { value: f64 },
+    CvcsMode { mode: String },
+    PzrLevelSetpoint { value: f64 },
+    Charging { value: f64 },
+    Letdown { value: f64 },
+    Boron { rate: f64 },
+    SafetyInjection,
+    ResetSi,
+    CnmtSpray { on: bool },
+    CnmtIsolate { on: bool },
     AckAlarm { id: String },
     AckAll,
     Inject(ScenarioEvent),
@@ -280,6 +289,9 @@ impl EngineCore {
                 ok("Turbine trip initiated.")
             }
             OperatorAction::ResetTrip => {
+                if self.controllers.state.si_latched {
+                    return no("Trip reset blocked: reset safety injection first.");
+                }
                 // Only allow reset once measured conditions are back in band.
                 let m = &self.instr;
                 let safe = m.get("neutron_power") < 5.0
@@ -416,6 +428,108 @@ impl EngineCore {
                     format!("SG level setpoint -> {:.0}%", self.op.sg_level_setpoint),
                 );
                 ok("Setpoint set.")
+            }
+            OperatorAction::CvcsMode { mode } => {
+                self.controllers.state.mode_cvcs_auto = mode == "auto";
+                self.log(
+                    "operator",
+                    format!("CVCS makeup control -> {}", mode.to_uppercase()),
+                );
+                ok("CVCS mode changed.")
+            }
+            OperatorAction::PzrLevelSetpoint { value } => {
+                self.op.pzr_level_setpoint = value.clamp(20.0, 80.0);
+                self.log(
+                    "operator",
+                    format!(
+                        "Pressurizer level setpoint -> {:.0}%",
+                        self.op.pzr_level_setpoint
+                    ),
+                );
+                ok("Setpoint set.")
+            }
+            OperatorAction::Charging { value } => {
+                if self.controllers.state.mode_cvcs_auto {
+                    return no("CVCS is in AUTO. Switch to MANUAL first.");
+                }
+                self.op.charging_manual = value.clamp(0.0, 1.0);
+                self.log(
+                    "operator",
+                    format!("Charging demand -> {:.0}%", self.op.charging_manual * 100.0),
+                );
+                ok("Charging demand set.")
+            }
+            OperatorAction::Letdown { value } => {
+                if self.controllers.state.mode_cvcs_auto {
+                    return no("CVCS is in AUTO. Switch to MANUAL first.");
+                }
+                self.op.letdown_manual = value.clamp(0.0, 1.0);
+                self.log(
+                    "operator",
+                    format!("Letdown demand -> {:.0}%", self.op.letdown_manual * 100.0),
+                );
+                ok("Letdown demand set.")
+            }
+            OperatorAction::Boron { rate } => {
+                self.op.boron_rate = rate.clamp(-2.0, 2.0);
+                let verb = if self.op.boron_rate >= 0.0 {
+                    "Borate"
+                } else {
+                    "Dilute"
+                };
+                self.log(
+                    "operator",
+                    format!("{verb} at {:.2} ppm/s", self.op.boron_rate.abs()),
+                );
+                ok("Boron adjustment set.")
+            }
+            OperatorAction::SafetyInjection => {
+                if self.controllers.state.si_latched {
+                    return no("Safety injection is already actuated.");
+                }
+                self.controllers.state.si_latched = true;
+                self.controllers.state.cnmt_isolation_latched = true;
+                self.log("operator", "MANUAL SAFETY INJECTION actuated.".into());
+                ok("Safety injection actuated.")
+            }
+            OperatorAction::ResetSi => {
+                let m = &self.instr;
+                let safe = m.get("primary_pressure") > 13.5 && m.get("cnmt_pressure") < 12.0;
+                if !safe {
+                    return no(
+                        "SI reset blocked: primary pressure or containment pressure not yet recovered.",
+                    );
+                }
+                self.controllers.state.si_latched = false;
+                self.controllers.state.cnmt_isolation_latched = false;
+                self.controllers.state.cnmt_spray_latched = false;
+                self.log(
+                    "operator",
+                    "Safety-injection / containment latches RESET.".into(),
+                );
+                ok("Safety injection reset. Restore normal makeup alignment.")
+            }
+            OperatorAction::CnmtSpray { on } => {
+                self.controllers.state.cnmt_spray_latched = on;
+                self.log(
+                    "operator",
+                    format!(
+                        "Containment spray {}",
+                        if on { "STARTED" } else { "STOPPED" }
+                    ),
+                );
+                ok("Containment spray command accepted.")
+            }
+            OperatorAction::CnmtIsolate { on } => {
+                self.controllers.state.cnmt_isolation_latched = on;
+                self.log(
+                    "operator",
+                    format!(
+                        "Containment isolation {}",
+                        if on { "CLOSED" } else { "RESET" }
+                    ),
+                );
+                ok("Containment isolation command accepted.")
             }
             OperatorAction::AckAlarm { id } => {
                 self.alarms.acknowledge(&id, now);

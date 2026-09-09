@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { LessonService } from '../core/lesson.service';
 import { GuideService } from '../core/guide.service';
+import { PersistenceService } from '../core/persistence.service';
 
 interface Topic {
   id: string;
@@ -69,15 +70,14 @@ const TOPICS: Topic[] = [
     title: 'Reactor trips',
     body: [
       'A reactor trip (scram) drops all control rods into the core by gravity, inserting a large negative reactivity in a couple of seconds. Fission power collapses; decay heat remains.',
-      'Trips are deliberately simple and independent: high power, high or low pressure, low pressuriser level, low steam-generator level, high coolant temperature, low coolant flow, and a trip on turbine trip.',
-      'All trip setpoints in this simulator are fictional, normalised teaching values. They do not correspond to any real reactor.',
+      'The trips here are simple and independent: high power, high or low pressure, low pressuriser level, low steam-generator level, high coolant temperature, low coolant flow, safety injection, and a trip on turbine trip.',
     ],
   },
   {
     id: 'electrical',
     title: 'Electrical power and defence in depth',
     body: [
-      'Normal power comes from the plant\'s own generator and from the off-site grid. Losing one leaves the other.',
+      "Normal power comes from the plant's own generator and from the off-site grid. Losing one leaves the other.",
       'Lose both and it is a "loss of off-site power": the reactor coolant pumps stop, the plant trips, and the essential electrical bus transfers to the emergency diesel generators within seconds.',
       'There are two independent diesels so that a single failure still leaves one. Below that is the station battery, which powers instrumentation and control for a few hours.',
     ],
@@ -91,16 +91,49 @@ const TOPICS: Topic[] = [
       'The skill this simulator is built to teach is telling apart a real process problem from an instrument problem: if one channel says the tank is full and two say it is emptying, the tank is emptying.',
     ],
   },
+  {
+    id: 'safeguards',
+    title: 'Loss of coolant, safety injection and containment',
+    body: [
+      'The reactor coolant system is a closed, high-pressure loop. If it springs a leak - a real break, or a relief valve stuck open - water is lost and pressure falls. The charging pumps make up what they can; when they cannot keep up, pressure and pressurizer level keep dropping.',
+      'On low primary pressure the protection system actuates safety injection: it trips the reactor and starts the high-head SI pumps, which inject heavily borated water. If pressure falls far enough, passive accumulators dump their contents in as well. The boron keeps the core shut down as it cools.',
+      'Everything that leaks out ends up inside the containment building, raising its pressure, temperature and sump level. Containment isolation closes the pipes that pass through the wall; containment spray washes the atmosphere to knock the pressure back down.',
+      'Think in terms of the three barriers between the fuel and the outside world: the fuel cladding, the reactor coolant boundary, and the containment. The Containment & Safeguards page shows the state of the last two.',
+    ],
+  },
 ];
 
 @Component({
   selector: 'nol-learn',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <div class="panel mode">
+      <div>
+        <b>{{ learn() ? 'Learn mode is on' : 'Challenge mode' }}</b>
+        <span class="dim">
+          {{
+            learn()
+              ? 'The coach under the safety strip tells you what to do next. Turn it off when you want to be tested.'
+              : 'No coaching. Run the scenarios below or from the Scenario page.'
+          }}
+        </span>
+      </div>
+      <button [class.active]="learn()" (click)="toggleLearn()">
+        {{ learn() ? 'Switch to Challenge' : 'Switch to Learn' }}
+      </button>
+    </div>
+
+    <div class="panel tours">
+      <b>Guided tours</b>
+      <button (click)="startTour('basics')">First look (2 min)</button>
+      <button (click)="startTour('walkthrough')">Full control-room walkthrough</button>
+    </div>
+
     <div class="tabs">
       <button [class.active]="tab() === 'lessons'" (click)="tab.set('lessons')">Lessons</button>
-      <button [class.active]="tab() === 'reference'" (click)="tab.set('reference')">How it works</button>
-      <button (click)="startTour()">Replay the tour</button>
+      <button [class.active]="tab() === 'reference'" (click)="tab.set('reference')">
+        How it works
+      </button>
     </div>
 
     @if (tab() === 'lessons') {
@@ -111,11 +144,15 @@ const TOPICS: Topic[] = [
               <b>{{ l.title }}</b>
               <span class="tag">{{ l.level }}</span>
               <span class="dim sm">~{{ l.minutes }} min</span>
-              @if (isDone(l.id)) { <span class="tag ok">done</span> }
+              @if (isDone(l.id)) {
+                <span class="tag ok">done</span>
+              }
             </div>
             <p class="dim">{{ l.brief }}</p>
             <ul class="objs">
-              @for (o of l.objectives; track o.id) { <li>{{ o.text }}</li> }
+              @for (o of l.objectives; track o.id) {
+                <li>{{ o.text }}</li>
+              }
             </ul>
             <button class="primary" (click)="start(l.id)">
               {{ isDone(l.id) ? 'Do it again' : 'Start lesson' }}
@@ -123,8 +160,8 @@ const TOPICS: Topic[] = [
           </div>
         }
         <p class="dim sm">
-          Lessons load a scenario and check your objectives automatically. You can pause, use the
-          Hint button, or end a lesson any time. Nothing here is a real procedure.
+          Each lesson loads a scenario and checks your objectives automatically. Pause, use a hint,
+          or end it any time.
         </p>
       </div>
     } @else {
@@ -139,18 +176,45 @@ const TOPICS: Topic[] = [
           @for (t of topics; track t.id) {
             @if (openTopic() === t.id) {
               <h3>{{ t.title }}</h3>
-              @for (p of t.body; track $index) { <p>{{ p }}</p> }
+              @for (p of t.body; track $index) {
+                <p>{{ p }}</p>
+              }
             }
           }
-          <hr />
-          <p class="dim sm">Written for this project from general engineering knowledge. Simplified
-            for teaching; not a real procedure.</p>
         </article>
       </div>
     }
   `,
   styles: [
     `
+      .mode {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      .mode > div {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .mode .dim {
+        font-size: 11px;
+      }
+      .mode button {
+        flex-shrink: 0;
+      }
+      .tours {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+      }
+      .tours b {
+        margin-right: 4px;
+      }
       .tabs {
         display: flex;
         gap: 6px;
@@ -231,9 +295,11 @@ const TOPICS: Topic[] = [
 export class LearnComponent {
   readonly lessons = inject(LessonService);
   private readonly guide = inject(GuideService);
+  private readonly persistence = inject(PersistenceService);
   readonly topics = TOPICS;
   readonly tab = signal<'lessons' | 'reference'>('lessons');
   readonly openTopic = signal('overview');
+  readonly learn = computed(() => this.persistence.prefs().learnMode);
 
   isDone(id: string): boolean {
     return this.lessons.done().includes(id);
@@ -241,7 +307,10 @@ export class LearnComponent {
   start(id: string): void {
     void this.lessons.start(id);
   }
-  startTour(): void {
-    this.guide.start('basics');
+  startTour(id: string): void {
+    this.guide.start(id);
+  }
+  toggleLearn(): void {
+    this.persistence.updatePrefs({ learnMode: !this.persistence.prefs().learnMode });
   }
 }

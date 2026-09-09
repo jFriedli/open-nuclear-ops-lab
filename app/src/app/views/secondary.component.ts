@@ -12,7 +12,7 @@ import { SimService } from '../sim/sim.service';
   template: `
     <div class="grid cols">
       @for (k of [1, 2]; track k) {
-        <section class="panel">
+        <section class="panel" [id]="'w-sg' + k">
           <h2>Steam generator {{ k }}</h2>
           <nol-readout label="Level (narrow range)" [value]="h('sg' + k + '_level')" units="%" [dp]="1"
             [deviation]="dev('sg' + k + '_level')" [flag]="faultFlag('sg' + k + '_level')" [level]="sgLevel(k)" />
@@ -26,7 +26,7 @@ import { SimService } from '../sim/sim.service';
         </section>
       }
 
-      <section class="panel">
+      <section class="panel" id="w-feedwater">
         <h2>Feedwater</h2>
         @for (i of [0, 1]; track i) {
           <div class="rcp">
@@ -53,7 +53,7 @@ import { SimService } from '../sim/sim.service';
         <div class="mt"><nol-mini-trend [keys]="['sg1_level', 'sg2_level', 'sg1_fw_flow']" /></div>
       </section>
 
-      <section class="panel">
+      <section class="panel" id="w-turbine">
         <h2>Turbine / generator</h2>
         <nol-readout label="Turbine speed" [value]="h('turbine_speed')" units="%" [dp]="1"
           [level]="h('turbine_speed') > 103 ? 'alarm' : 'normal'" />
@@ -84,7 +84,7 @@ import { SimService } from '../sim/sim.service';
         </div>
       </section>
 
-      <section class="panel">
+      <section class="panel" id="w-condenser">
         <h2>Condenser</h2>
         <nol-readout label="Backpressure" [value]="h('condenser_pressure')" units="kPa" [dp]="1"
           [level]="h('condenser_pressure') > 12 ? 'warn' : 'normal'" />

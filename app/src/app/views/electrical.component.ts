@@ -9,7 +9,7 @@ import { MiniTrendComponent } from '../ui/mini-trend.component';
   imports: [PillComponent, ReadoutComponent, BarComponent, MiniTrendComponent],
   template: `
     <div class="grid cols">
-      <section class="panel">
+      <section class="panel" id="w-sld">
         <h2>Single-line (simplified)</h2>
         <div class="sld">
           <div class="node" [class.dead]="!e().grid_available">
@@ -43,7 +43,7 @@ import { MiniTrendComponent } from '../ui/mini-trend.component';
         </div>
       </section>
 
-      <section class="panel">
+      <section class="panel" id="w-loads">
         <h2>Loads &amp; battery</h2>
         <nol-readout label="Reactor coolant pumps powered" [value]="e().rcp_powered ? 1 : 0" [dp]="0" units="" />
         <div class="row"><span class="dim">RCP power source</span>
@@ -58,15 +58,10 @@ import { MiniTrendComponent } from '../ui/mini-trend.component';
       </section>
 
       <section class="panel">
-        <h2>Notes</h2>
-        <p class="dim">This is a deliberately simplified electrical model and does <strong>not</strong>
-          represent any real plant's electrical topology. It captures only the concepts needed to
-          study a loss of power: off-site supply, the main generator, one essential bus, two
-          emergency diesel generators and a station battery.</p>
-        <p class="dim">In this model the reactor coolant pumps and main feedwater pumps are powered
-          only from off-site power or the running main generator - never from the diesels. The
-          diesels carry the essential bus (safety loads, auxiliary feedwater, instrumentation
-          chargers).</p>
+        <h2>How the supplies connect</h2>
+        <p class="dim">The reactor coolant pumps and main feedwater pumps run only on off-site power
+          or the main generator — never on the diesels. The diesels carry the essential bus: safety
+          loads, auxiliary feedwater, instrumentation chargers. Below that is the station battery.</p>
       </section>
     </div>
   `,

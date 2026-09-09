@@ -21,9 +21,12 @@ process faults from instrument faults. It is deliberately not accurate.
   no axial offset, no local peaking, no reflector.
 - Single fuel temperature node; no gap conductance or clad model.
 - Prompt-critical excursions are clamped away, not modelled.
-- Xenon and iodine are a two-state normalised approximation; samarium,
-  burn-up, and boron let-down/dilution dynamics are not modelled (boron is a
-  fixed background baked into `ρ_bias`).
+- Xenon and iodine are a two-state normalised approximation; samarium and
+  burn-up are not modelled.
+- Soluble boron is a single lumped concentration with a linear reactivity
+  worth. Charging/letdown mixing, the boric-acid blender, boron precipitation
+  and any spatial effects are not modelled; injected borated water simply
+  drives the concentration toward a fixed source value.
 
 ### Thermal-hydraulics
 - Single-phase primary only. **No boiling, no CHF/DNB, no two-phase natural
@@ -36,9 +39,18 @@ process faults from instrument faults. It is deliberately not accurate.
 - No real steam tables; saturation temperature is a low-order polynomial fit.
 - Steam-generator inventory and level are normalised heuristics with a crude
   shrink/swell term; no downcomer/riser, no tube-bundle model.
-- No primary or secondary chemistry, no radiological model, no containment
-  thermodynamics. "Containment / barrier status" is a placeholder derived only
-  from primary pressure and temperature.
+- No secondary chemistry and no radiological / source-term model.
+- Containment is a **single lumped volume**: one pressure state, one
+  temperature state and a sump level, driven by an abstract "released
+  coolant-energy" flow. No compartments, no hydrogen, no heat-sink
+  structures modelled individually, no real spray or fan-cooler thermodynamics,
+  no leakage path. The CVCS is likewise a lumped charging/letdown pair.
+- Safety injection is a fixed high-head pump flow plus a pressure-gated passive
+  accumulator flow. No RWST inventory limit, no recirculation switchover, no
+  low-head / residual-heat-removal train, no pump curves.
+- The loss-of-coolant "break" is a single orifice term `∝ area·√pressure`;
+  there is no break-location detail, no subcooled/saturated blowdown
+  distinction and no two-phase critical flow.
 
 ### Balance of plant
 - Turbine is a single lumped stage: no extraction, no moisture separator

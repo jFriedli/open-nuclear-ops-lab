@@ -25,13 +25,22 @@ interface Box {
     @if (guide.step(); as step) {
       <div role="dialog" aria-label="Guided tour">
         @if (hasTarget()) {
-          <div class="ring" [style.top.px]="hole().top" [style.left.px]="hole().left"
-            [style.width.px]="hole().width" [style.height.px]="hole().height"></div>
+          <div
+            class="ring"
+            [style.top.px]="hole().top"
+            [style.left.px]="hole().left"
+            [style.width.px]="hole().width"
+            [style.height.px]="hole().height"
+          ></div>
         } @else {
           <div class="scrim"></div>
         }
-        <div class="card" [class.float]="floatCard()" [style.top.px]="cardPos().top"
-          [style.left.px]="cardPos().left">
+        <div
+          class="card"
+          [class.float]="floatCard()"
+          [style.top.px]="cardPos().top"
+          [style.left.px]="cardPos().left"
+        >
           <div class="hd">
             <span>{{ guide.active()?.title }}</span>
             <span class="prog">{{ guide.progress()?.n }} / {{ guide.progress()?.total }}</span>
@@ -169,6 +178,7 @@ export class GuideOverlayComponent {
   });
 
   private raf = 0;
+  private scrolledForKey = '';
 
   constructor() {
     // Re-locate the spotlight target on every animation frame while active.
@@ -176,10 +186,14 @@ export class GuideOverlayComponent {
       const step = this.guide.step();
       if (step) {
         this.guide.tick(this.sim.snapshot());
-        const el = step.target
-          ? (document.querySelector(step.target) as HTMLElement | null)
-          : null;
+        const el = step.target ? (document.querySelector(step.target) as HTMLElement | null) : null;
         if (el) {
+          // Bring a below-the-fold target into view once, when the step opens.
+          const key = `${this.guide.runId()}:${this.guide.index()}`;
+          if (this.scrolledForKey !== key) {
+            this.scrolledForKey = key;
+            el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          }
           const r = el.getBoundingClientRect();
           const pad = 6;
           this.hole.set({

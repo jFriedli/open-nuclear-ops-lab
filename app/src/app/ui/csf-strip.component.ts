@@ -7,7 +7,7 @@ import { SimService } from '../sim/sim.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink],
   template: `
-    <a routerLink="/safety" class="strip" title="Critical Safety Functions - educational abstraction, not a real EOP">
+    <a routerLink="/safety" class="strip" title="Critical Safety Functions — tap for detail">
       @for (c of csf(); track c.name) {
         <span class="csf" [class]="'status-' + c.status.toLowerCase()">
           <b>{{ short(c.name) }}</b>

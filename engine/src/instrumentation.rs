@@ -138,6 +138,11 @@ fn truth(state: &PhysicalState, source: &str) -> f64 {
         "condenser_pressure" => state.condenser_pressure,
         "battery_charge" => state.battery_charge,
         "xenon" => state.xenon * 100.0,
+        "boron_ppm" => state.boron_ppm,
+        "cnmt_pressure" => state.cnmt_pressure,
+        "cnmt_temp" => state.cnmt_temp,
+        "cnmt_sump" => state.cnmt_sump,
+        "accum_level" => state.accumulator_frac * 100.0,
         _ => 0.0,
     }
 }
@@ -155,6 +160,7 @@ impl Instrumentation {
             ("sg1_level", "sg1_level", "%", 0.4),
             ("sg2_level", "sg2_level", "%", 0.4),
             ("rod_pos", "rod_pos", "%", 0.1),
+            ("cnmt_pressure", "cnmt_pressure", "kPa", 0.3),
         ];
         for (key, src, units, noise) in redundant {
             let channels = ["A", "B", "C"]
@@ -188,6 +194,10 @@ impl Instrumentation {
             ("condenser_pressure", "condenser_pressure", "kPa", 0.2),
             ("battery_charge", "battery_charge", "%", 0.2),
             ("xenon", "xenon", "%", 0.5),
+            ("boron_ppm", "boron_ppm", "ppm", 2.0),
+            ("cnmt_temp", "cnmt_temp", "degC", 0.4),
+            ("cnmt_sump", "cnmt_sump", "%", 0.3),
+            ("accum_level", "accum_level", "%", 0.5),
         ];
         for (key, src, units, noise) in single {
             signals.push(MeasuredSignal {

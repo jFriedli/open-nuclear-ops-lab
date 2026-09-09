@@ -55,13 +55,19 @@ scale, and remain deterministic.
 | `condenser` | condenser cooling effectiveness | `degrade` (value = target 0..1) |
 | `turbine` | main turbine | `trip` |
 | `reactor` | reactor protection | `trip` |
+| `loca`, `valve.break` | loss-of-coolant break | `start` (value = break size 0..1, default 0.4) |
+| `si` | safety-injection signal | `start` / `trip` |
+| `cnmt.isolate` | containment phase-A isolation | `start` (close) / `stop` (open) |
+| `cnmt.spray` | containment spray | `start` / `stop` |
+| `boron` | operator boration / dilution | `set`, `ramp` (value = ppm/s, + borate / − dilute) |
 | `instrument.<signal>[.<A\|B\|C>]` | one raw sensor channel | `stuck`, `drift`, `bias`, `noise`, `fail_low`, `fail_high` |
 | `signal.<signal>` | the voted / processed value feeding **control *and* HMI** | `stuck`, `bias`, `scale`, `set` |
 | `hmi.<signal>` | the **displayed** value only - control, protection, alarms and CSF unaffected | `stuck`, `bias`, `scale`, `set` |
 
 `<signal>` is any key from the HMI list (`neutron_power`, `primary_pressure`,
-`pzr_level`, `t_avg`, `sg1_level`, `sg2_level`, `rod_pos`, …). Omitting the
-channel letter targets the first/only channel.
+`pzr_level`, `t_avg`, `sg1_level`, `sg2_level`, `rod_pos`, `cnmt_pressure`,
+`boron_ppm`, `cnmt_temp`, `cnmt_sump`, `accum_level`, …). Omitting the channel
+letter targets the first/only channel.
 
 ### Instrument fault semantics
 
@@ -94,6 +100,7 @@ Single-fault (one per required initial event type):
 | `pressure-transmitter-stuck.json` | frozen channel + a later real transient |
 | `control-rod-position-disagreement.json` | position indication vs. core power |
 | `porv-stuck-open.json` | small loss-of-inventory event |
+| `small-loca.json` | loss of coolant → SI actuation, containment isolation & pressurisation |
 | `degraded-condenser.json` | slow BOP degradation → high-backpressure trip |
 | `generic-instrumentation-failure.json` | multiple unrelated instrument faults, **no** process fault |
 

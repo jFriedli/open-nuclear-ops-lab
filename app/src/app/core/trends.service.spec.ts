@@ -17,6 +17,7 @@ function snap(t: number, power: number): Snapshot {
     controllers: {} as Snapshot['controllers'],
     electrical: {} as Snapshot['electrical'],
     equipment: {} as Snapshot['equipment'],
+    safety: {} as Snapshot['safety'],
     csf: [],
     alarms: [],
     alarm_unacked: 0,

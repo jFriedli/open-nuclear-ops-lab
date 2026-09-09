@@ -87,10 +87,11 @@ fn critical_safety_functions(m: &Instrumentation, cs: &ControllerState) -> Vec<C
         CsfStatus::Normal
     };
 
-    // CONTAINMENT / BARRIER STATUS (very abstract in v1)
-    let barrier = if press < 11.0 || tavg > 345.0 {
+    // CONTAINMENT / BARRIER STATUS — primary boundary plus containment pressure.
+    let cnmt_p = g("cnmt_pressure");
+    let barrier = if press < 11.0 || tavg > 345.0 || cnmt_p > 100.0 || cs.cnmt_spray_latched {
         CsfStatus::Challenged
-    } else if press < 13.5 {
+    } else if press < 13.5 || cnmt_p > 15.0 || cs.si_latched || cs.cnmt_isolation_latched {
         CsfStatus::Degraded
     } else {
         CsfStatus::Normal
@@ -125,7 +126,7 @@ fn critical_safety_functions(m: &Instrumentation, cs: &ControllerState) -> Vec<C
         Csf {
             name: "CONTAINMENT / BARRIER STATUS".into(),
             status: barrier,
-            basis: "primary pressure, coolant temperature (abstract)".into(),
+            basis: "primary pressure, coolant temperature, containment pressure, SI status".into(),
         },
     ];
     if dev_high {
@@ -152,6 +153,25 @@ pub struct ElectricalSummary {
     pub edg_b_available: bool,
     pub battery_charge: f64,
     pub rcp_powered: bool,
+}
+
+/// Safeguards / CVCS / containment summary shown to the operator.
+#[derive(Clone, Debug, Serialize)]
+pub struct SafetySystemsSummary {
+    pub si_active: bool,
+    pub si_flow_pct: f64,
+    pub accumulator_pct: f64,
+    pub charging_pct: f64,
+    pub letdown_pct: f64,
+    pub boron_ppm: f64,
+    /// Boron reactivity contribution (pcm; negative).
+    pub boron_pcm: f64,
+    pub primary_leak_pct: f64,
+    pub cnmt_pressure: f64,
+    pub cnmt_temp: f64,
+    pub cnmt_sump: f64,
+    pub cnmt_isolated: bool,
+    pub cnmt_spray: bool,
 }
 
 /// Operator-visible plant equipment status (run/standby indications — not
@@ -195,6 +215,7 @@ pub struct Snapshot<'a> {
     pub controllers: &'a ControllerState,
     pub electrical: ElectricalSummary,
     pub equipment: EquipmentStatus,
+    pub safety: SafetySystemsSummary,
     pub csf: Vec<Csf>,
 
     pub alarms: Vec<Alarm>,
@@ -269,6 +290,22 @@ pub fn build_snapshot<'a>(
         rcp_powered: phys.rcp.iter().any(|&r| r),
     };
 
+    let safety = SafetySystemsSummary {
+        si_active: phys.si_active,
+        si_flow_pct: round4(phys.si_flow * 100.0),
+        accumulator_pct: round4(shown("accum_level")),
+        charging_pct: round4(phys.charging * 100.0),
+        letdown_pct: round4(phys.letdown * 100.0),
+        boron_ppm: round4(shown("boron_ppm")),
+        boron_pcm: round4(phys.rho_boron * 1e5),
+        primary_leak_pct: round4(phys.primary_leak * 100.0),
+        cnmt_pressure: round4(shown("cnmt_pressure")),
+        cnmt_temp: round4(shown("cnmt_temp")),
+        cnmt_sump: round4(shown("cnmt_sump")),
+        cnmt_isolated: phys.cnmt_isolated,
+        cnmt_spray: phys.cnmt_spray,
+    };
+
     let recent_log: Vec<EventLogEntry> = event_log
         .iter()
         .rev()
@@ -307,6 +344,7 @@ pub fn build_snapshot<'a>(
             mfw_pump: phys.mfw_pump,
             afw_on: phys.afw_on,
         },
+        safety,
         csf: critical_safety_functions(instr, controllers),
         alarms: alarms.active_list(),
         alarm_unacked: alarms.unacked_count(),

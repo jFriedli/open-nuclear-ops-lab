@@ -6,7 +6,7 @@ test('first-time visitor sees the welcome screen and can take the guided tour', 
   await page.goto('/'); // no pref set: fresh visitor
 
   await expect(page.locator('app-welcome')).toBeVisible({ timeout: 20_000 });
-  await page.getByRole('button', { name: /Take the 2-minute tour/ }).click();
+  await page.getByRole('button', { name: /Learn the plant/ }).click();
   await expect(page.locator('app-welcome')).toHaveCount(0);
 
   // The tour overlay is up and drives the user.
@@ -36,19 +36,52 @@ test('first-time visitor sees the welcome screen and can take the guided tour', 
   expect(errors).toEqual([]);
 });
 
-test('beginner status bar explains the plant in plain language', async ({ page }) => {
+test('the full control-room walkthrough runs end to end', async ({ page }) => {
+  const errors = collectErrors(page);
   await page.addInitScript(() =>
-    localStorage.setItem('nol.prefs.v1', JSON.stringify({ onboarded: true, beginnerMode: true })),
+    localStorage.setItem('nol.prefs.v1', JSON.stringify({ onboarded: true, learnMode: true })),
+  );
+  await page.goto('/learn');
+  await page.getByRole('button', { name: /Full control-room walkthrough/ }).click();
+
+  const card = page.locator('app-guide-overlay .card');
+  await expect(card).toBeVisible();
+  const total = Number((await card.locator('.prog').innerText()).split('/')[1].trim());
+  expect(total).toBeGreaterThan(25);
+
+  // Click Next all the way to the end; the tour changes routes as it goes.
+  for (let i = 0; i < total + 3; i++) {
+    if ((await card.count()) === 0) break;
+    await card.getByRole('button', { name: /^(Next|Done)$/ }).click();
+    await page.waitForTimeout(120);
+  }
+  await expect(card).toHaveCount(0);
+  // It visited the deep pages.
+  await expect(page.locator('nol-containment, nol-scenario')).toHaveCount(1);
+  expect(errors).toEqual([]);
+});
+
+test('the learn-mode coach explains the plant and gives next steps', async ({ page }) => {
+  await page.addInitScript(() =>
+    localStorage.setItem('nol.prefs.v1', JSON.stringify({ onboarded: true, learnMode: true })),
   );
   await page.goto('/');
-  await expect(page.locator('app-plant-status-bar .bar')).toContainText(/Running normally/, {
+  await expect(page.locator('app-coach-bar .coach')).toBeVisible({ timeout: 20_000 });
+  // Paused at t=0 the coach walks a first-timer through starting the clock.
+  await expect(page.locator('app-coach-bar .coach')).toContainText(/frozen|Press RUN/i);
+
+  await page.locator('#run-toggle').click();
+  await expect(page.locator('app-coach-bar .coach')).toContainText(/Running normally/, {
     timeout: 20_000,
   });
 
-  // After a trip the wording changes and gives a next step.
-  await page.locator('#run-toggle').click();
+  // After a trip the wording changes and the step list gives a next action.
   await page.getByRole('link', { name: 'Reactor', exact: true }).click();
   await page.getByRole('button', { name: 'MANUAL REACTOR TRIP' }).click();
-  await expect(page.locator('app-plant-status-bar .bar')).toContainText(/shut down|tripped/i);
-  await expect(page.locator('app-plant-status-bar .advice')).toBeVisible();
+  await expect(page.locator('app-coach-bar .coach')).toContainText(/shut down|tripped/i);
+  await expect(page.locator('app-coach-bar .steps li').first()).toBeVisible();
+
+  // Challenge mode hides the coach entirely.
+  await page.getByRole('button', { name: 'Learn', exact: true }).click();
+  await expect(page.locator('app-coach-bar .coach')).toHaveCount(0);
 });

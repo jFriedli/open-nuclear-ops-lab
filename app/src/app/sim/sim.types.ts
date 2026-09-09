@@ -30,6 +30,22 @@ export interface EquipmentStatus {
   afw_on: boolean;
 }
 
+export interface SafetySystemsSummary {
+  si_active: boolean;
+  si_flow_pct: number;
+  accumulator_pct: number;
+  charging_pct: number;
+  letdown_pct: number;
+  boron_ppm: number;
+  boron_pcm: number;
+  primary_leak_pct: number;
+  cnmt_pressure: number;
+  cnmt_temp: number;
+  cnmt_sump: number;
+  cnmt_isolated: boolean;
+  cnmt_spray: boolean;
+}
+
 export interface Alarm {
   id: string;
   priority: number;
@@ -62,12 +78,16 @@ export interface ControllerState {
   mode_pzr_auto: boolean;
   mode_fw_auto: boolean;
   mode_turbine_auto: boolean;
+  mode_cvcs_auto: boolean;
   rod_error: number;
   pzr_press_error: number;
   fw_error: [number, number];
   target_power: number;
   reactor_trip_latched: boolean;
   turbine_trip_latched: boolean;
+  si_latched: boolean;
+  cnmt_isolation_latched: boolean;
+  cnmt_spray_latched: boolean;
 }
 
 export interface SteamGeneratorPhys {
@@ -86,6 +106,7 @@ export interface PhysicalState {
   rho_fuel: number;
   rho_mod: number;
   rho_xenon: number;
+  rho_boron: number;
   rho_external: number;
   rho_scram: number;
   rod_pos: number;
@@ -117,6 +138,18 @@ export interface PhysicalState {
   turbine_tripped: boolean;
   condenser_pressure: number;
   condenser_effectiveness: number;
+  boron_ppm: number;
+  charging: number;
+  letdown: number;
+  si_active: boolean;
+  accumulator_frac: number;
+  si_flow: number;
+  primary_leak: number;
+  cnmt_pressure: number;
+  cnmt_temp: number;
+  cnmt_sump: number;
+  cnmt_spray: boolean;
+  cnmt_isolated: boolean;
   reactor_tripped: boolean;
 }
 
@@ -160,6 +193,7 @@ export interface Snapshot {
   controllers: ControllerState;
   electrical: ElectricalSummary;
   equipment: EquipmentStatus;
+  safety: SafetySystemsSummary;
   csf: Csf[];
   alarms: Alarm[];
   alarm_unacked: number;

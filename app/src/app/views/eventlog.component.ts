@@ -16,7 +16,7 @@ const CATS = ['operator', 'auto', 'trip', 'fault', 'scenario', 'alarm', 'info'] 
       }
       <span class="dim">{{ rows().length }} entries · simulation timestamps</span>
     </div>
-    <div class="panel">
+    <div class="panel" id="w-eventlog">
       <h2>Event log</h2>
       <div class="scroll" style="max-height: 70vh">
         <table>

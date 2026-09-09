@@ -35,7 +35,8 @@ cd ../app  && npm run build:wasm && npm test -- --no-watch && npm run build && n
 ## Bigger pieces (discuss first in an issue)
 
 - A two-region pressuriser model.
-- Boron dilution / let-down dynamics.
+- A multi-compartment containment, or a proper break blowdown model.
+- RWST inventory and recirculation switchover for safety injection.
 - The instrumentation → signal-processing → controller → network → HMI fault
   chain described in `docs/INSTRUMENTATION.md`.
 

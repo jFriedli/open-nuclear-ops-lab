@@ -36,7 +36,7 @@ import type { Alarm } from '../sim/sim.types';
       <span class="dim">{{ filtered().length }} shown · {{ unacked() }} unacknowledged</span>
     </div>
 
-    <div class="panel">
+    <div class="panel" id="w-annunciator">
       <h2>Annunciator</h2>
       <table>
         <thead>

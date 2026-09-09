@@ -11,7 +11,7 @@ import { SimService } from '../sim/sim.service';
   imports: [FormsModule, ReadoutComponent, BarComponent, PillComponent, MiniTrendComponent],
   template: `
     <div class="grid cols">
-      <section class="panel">
+      <section class="panel" id="w-neutronics">
         <h2>Neutronics</h2>
         <nol-readout label="Neutron power" [value]="h('neutron_power')" units="%" [dp]="1"
           [deviation]="dev('neutron_power')" [flag]="faultFlag('neutron_power')"
@@ -25,7 +25,7 @@ import { SimService } from '../sim/sim.service';
         <div class="mt"><nol-mini-trend [keys]="['neutron_power']" /></div>
       </section>
 
-      <section class="panel">
+      <section class="panel" id="w-rods">
         <h2>Control Rods</h2>
         <nol-readout label="Bank position" [value]="h('rod_pos')" units="% withdrawn" [dp]="1"
           [deviation]="dev('rod_pos')" />
@@ -57,7 +57,7 @@ import { SimService } from '../sim/sim.service';
         </div>
       </section>
 
-      <section class="panel">
+      <section class="panel" id="w-reactivity">
         <h2>Reactivity balance</h2>
         @if (phys(); as p) {
           <table>
@@ -66,6 +66,7 @@ import { SimService } from '../sim/sim.service';
               <tr><td>Fuel (Doppler)</td><td class="num">{{ pcm(p.rho_fuel) }}</td></tr>
               <tr><td>Moderator temp</td><td class="num">{{ pcm(p.rho_mod) }}</td></tr>
               <tr><td>Xenon</td><td class="num">{{ pcm(p.rho_xenon) }}</td></tr>
+              <tr><td>Boron</td><td class="num">{{ pcm(p.rho_boron) }}</td></tr>
               <tr><td>External / scenario</td><td class="num">{{ pcm(p.rho_external) }}</td></tr>
               <tr><td>Scram</td><td class="num">{{ pcm(p.rho_scram) }}</td></tr>
               <tr class="tot"><td>Net</td><td class="num">{{ pcm(p.reactivity) }}</td></tr>
@@ -81,7 +82,7 @@ import { SimService } from '../sim/sim.service';
         }
       </section>
 
-      <section class="panel">
+      <section class="panel" id="w-rx-temps">
         <h2>Temperatures</h2>
         <nol-readout label="Fuel (avg)" [value]="h('t_fuel')" units="°C" [dp]="0" />
         <nol-readout label="Coolant T-avg" [value]="h('t_avg')" units="°C" [dp]="1"

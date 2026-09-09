@@ -27,9 +27,10 @@ Each measured signal (`instrumentation.rs::MeasuredSignal`) has one or more
 **channels**. Safety-significant signals have three (A/B/C):
 
 - `neutron_power`, `primary_pressure`, `pzr_level`, `t_avg`,
-  `sg1_level`, `sg2_level`, `rod_pos`
+  `sg1_level`, `sg2_level`, `rod_pos`, `cnmt_pressure`
 
-Everything else has a single channel.
+Everything else has a single channel (including `boron_ppm`, `cnmt_temp`,
+`cnmt_sump`, `accum_level`).
 
 ### Per-channel model
 

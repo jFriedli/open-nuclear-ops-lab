@@ -3,9 +3,6 @@
     <button class="menu-btn" (click)="navOpen.set(!navOpen())" aria-label="menu">☰</button>
     <div class="brand">
       <strong>NUCLEAR OPS LAB</strong>
-      <span class="edu" title="Fictional plant. Not for real operation, safety analysis or training credit.">
-        training sim
-      </span>
     </div>
 
     <div class="clockbox">
@@ -28,8 +25,12 @@
         <span [class.blink]="unacked() > 0">◤</span> {{ unacked() }}
       </a>
       <button (click)="openHelp()" title="help / restart the tour">?</button>
-      <button (click)="toggleBeginner()" [class.active]="beginner()" title="plain-language helpers">
-        Beginner
+      <button
+        (click)="toggleLearn()"
+        [class.active]="learn()"
+        [title]="learn() ? 'Learn mode: the coach guides you. Click for Challenge mode.' : 'Challenge mode: no coaching. Click for Learn mode.'"
+      >
+        {{ learn() ? 'Learn' : 'Challenge' }}
       </button>
       <button (click)="toggleDebug()" [class.active]="debug()" title="instructor / debug: reveals hidden truth">
         Instr
@@ -37,8 +38,8 @@
     </div>
   </header>
 
-  <app-plant-status-bar />
   <app-csf-strip />
+  <app-coach-bar />
 
   @if (hmiFaults().length || signalFaults().length) {
     <div class="integrity-bar">
