@@ -30,7 +30,11 @@ Each measured signal (`instrumentation.rs::MeasuredSignal`) has one or more
   `sg1_level`, `sg2_level`, `rod_pos`, `cnmt_pressure`
 
 Everything else has a single channel (including `boron_ppm`, `cnmt_temp`,
-`cnmt_sump`, `accum_level`).
+`cnmt_sump`, `accum_level`, `sgtr_leak`).
+
+Deliberate manipulation of these layers (setpoint tampering, protection-trip
+suppression, actuator-command injection, alarm suppression) is covered in
+[CYBER.md](./CYBER.md).
 
 ### Per-channel model
 

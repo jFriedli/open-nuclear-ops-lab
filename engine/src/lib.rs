@@ -208,9 +208,14 @@ impl EngineCore {
             self.log(cat, format!("{}: {}", p.kind.to_uppercase(), p.reason));
         }
 
-        // 4. Alarms (measured values + latched trip state).
-        self.alarms
-            .evaluate(now, &self.instr, &self.controllers.state);
+        // 4. Alarms (measured values + latched trip state); a cyber attack may
+        //    suppress specific annunciator windows.
+        self.alarms.evaluate(
+            now,
+            &self.instr,
+            &self.controllers.state,
+            &inputs.inhibit_alarms,
+        );
 
         // 5. Advance the physical process.
         self.phys.step(&inputs);

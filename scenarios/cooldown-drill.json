@@ -1,0 +1,17 @@
+{
+  "id": "cooldown-drill",
+  "name": "Cooldown to Cold Shutdown",
+  "description": "The reactor is tripped at the start. With the plant stable on decay heat, the job is to take it toward cold shutdown: add shutdown margin with boron, then cool and depressurise the primary in a controlled way using the steam dump, pressurizer spray and letdown, keeping a steam generator as the heat sink throughout.",
+  "initial": "hot_full_power",
+  "seed": 20260916,
+  "briefing": "The reactor trips at t+5 s. Then: put the pressurizer and CVCS in manual, borate to well above 1400 ppm for shutdown margin, open the pressurizer spray to bring primary pressure down, and hold the turbine load target at zero so the steam dump carries decay heat away and coolant temperature falls. Keep a steam generator above 25%. Aim for T-avg below about 260 degC with pressure below 13 MPa.",
+  "learning_objectives": [
+    "Understand cold shutdown as a coordinated reduction of power, temperature and pressure",
+    "Use boration for shutdown margin before cooling down",
+    "Use the steam dump and pressurizer spray to control the cooldown",
+    "Keep a heat sink and stay inside pressure/temperature limits the whole way"
+  ],
+  "events": [
+    { "time": 5, "target": "reactor", "action": "trip", "label": "Reactor trip - begin cooldown" }
+  ]
+}

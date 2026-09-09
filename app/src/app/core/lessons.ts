@@ -114,7 +114,8 @@ export const LESSONS: Lesson[] = [
       {
         id: 'heatsink',
         text: 'Keep both steam generators above 30% for the exercise',
-        check: (s) => Math.min(h(s, 'sg1_level'), h(s, 'sg2_level')) > 30 && (s?.sim_time ?? 0) > 200,
+        check: (s) =>
+          Math.min(h(s, 'sg1_level'), h(s, 'sg2_level')) > 30 && (s?.sim_time ?? 0) > 200,
       },
     ],
   },
@@ -193,7 +194,11 @@ export const LESSONS: Lesson[] = [
         text: 'The essential bus stays energised',
         check: (s) => !!s?.electrical.essential_bus_energized && (s?.sim_time ?? 0) > 120,
       },
-      { id: 'ack', text: 'Acknowledge the alarm burst', check: (s) => (s?.alarm_unacked ?? 1) === 0 },
+      {
+        id: 'ack',
+        text: 'Acknowledge the alarm burst',
+        check: (s) => (s?.alarm_unacked ?? 1) === 0,
+      },
     ],
   },
   {
@@ -228,8 +233,147 @@ export const LESSONS: Lesson[] = [
         id: 'nopanic',
         text: 'You did not trip the reactor or turbine',
         check: (s) =>
-          !s?.controllers.reactor_trip_latched && !s?.controllers.turbine_trip_latched &&
+          !s?.controllers.reactor_trip_latched &&
+          !s?.controllers.turbine_trip_latched &&
           (s?.sim_time ?? 0) > 200,
+      },
+    ],
+  },
+  {
+    id: 'l7-loca',
+    title: 'Loss of coolant and safety injection',
+    level: 'Intermediate',
+    minutes: 8,
+    brief:
+      'A small break opens in the reactor coolant system. Confirm the safeguards sequence works: ' +
+      'reactor trip, safety injection, containment isolation - and keep an eye on containment.',
+    scenario: 'small-loca.json',
+    autorun: true,
+    hints: [
+      'Pressure and pressurizer level fall while charging demand climbs to hold them - that is a leak.',
+      'Safety injection actuates automatically on low pressure and trips the reactor.',
+      'The Containment & Safeguards page shows SI flow, accumulators and containment pressure.',
+    ],
+    objectives: [
+      {
+        id: 'trip',
+        text: 'The reactor trips',
+        check: (s) => !!s?.controllers.reactor_trip_latched,
+      },
+      {
+        id: 'si',
+        text: 'Safety injection actuates',
+        check: (s) => !!s?.controllers.si_latched,
+      },
+      {
+        id: 'isolation',
+        text: 'Containment isolates (phase A)',
+        check: (s) => !!s?.safety.cnmt_isolated,
+      },
+      {
+        id: 'ack',
+        text: 'Acknowledge the alarms',
+        check: (s) => (s?.alarm_unacked ?? 1) === 0,
+      },
+      {
+        id: 'contained',
+        text: 'Containment pressure controlled below 250 kPa',
+        check: (s) => (s?.safety.cnmt_pressure ?? 0) < 250 && (s?.sim_time ?? 0) > 200,
+      },
+    ],
+  },
+  {
+    id: 'l8-cooldown',
+    title: 'Cool down to cold shutdown',
+    level: 'Intermediate',
+    minutes: 12,
+    brief:
+      'The reactor is tripped. Take the plant toward cold shutdown: add shutdown margin with boron, ' +
+      'then cool and depressurise the primary in a controlled way while keeping a heat sink.',
+    scenario: 'cooldown-drill.json',
+    autorun: true,
+    hints: [
+      'Containment & Safeguards page: put CVCS in manual, then Borate + until boron is well above 1400 ppm.',
+      'Primary page: put the pressurizer in manual and open the spray to bring pressure down.',
+      'Secondary page: hold the load target at 0 so the steam dump carries decay heat and T-avg falls.',
+      'Keep a steam generator above 25% the whole time.',
+    ],
+    objectives: [
+      {
+        id: 'shutdown',
+        text: 'Reactor subcritical (power below 1%)',
+        check: (s) => (s?.hmi['neutron_power'] ?? 100) < 1,
+      },
+      {
+        id: 'boron',
+        text: 'Boron raised above 1400 ppm for shutdown margin',
+        check: (s) => (s?.safety.boron_ppm ?? 0) > 1400,
+      },
+      {
+        id: 'press',
+        text: 'Primary pressure reduced below 13 MPa',
+        check: (s) => (s?.hmi['primary_pressure'] ?? 15.5) < 13,
+      },
+      {
+        id: 'temp',
+        text: 'Coolant T-avg brought below 260 degC',
+        check: (s) => (s?.hmi['t_avg'] ?? 305) < 260,
+      },
+      {
+        id: 'heatsink',
+        text: 'A steam generator kept above 25% throughout',
+        check: (s) =>
+          Math.min(s?.hmi['sg1_level'] ?? 0, s?.hmi['sg2_level'] ?? 0) > 25 &&
+          (s?.hmi['t_avg'] ?? 305) < 260,
+      },
+    ],
+    failIf: {
+      text: 'A steam generator emptied - the heat sink was lost',
+      check: (s) => Math.min(s?.hmi['sg1_level'] ?? 100, s?.hmi['sg2_level'] ?? 100) < 12,
+    },
+  },
+  {
+    id: 'l9-cyber',
+    title: 'Is the plant lying to you? (cyber)',
+    level: 'Intermediate',
+    minutes: 8,
+    brief:
+      'An attacker has moved a control setpoint and spoofed the matching gauge so it still reads ' +
+      'normal, and suppressed the alarm that would warn you. Prove the plant is really moving, ' +
+      'using indications the attacker did not touch, and take manual control.',
+    scenario: 'cyber-setpoint-manipulation.json',
+    autorun: true,
+    hints: [
+      'The primary pressure gauge is frozen near 15.5. Do not trust it.',
+      'Watch the CONTAINMENT / PRIMARY INVENTORY safety function - it uses the true reading.',
+      'Check pressurizer heater/spray demand: spray wide open for no visible reason means real pressure is low.',
+      'Primary page: take the pressurizer to MANUAL and set the heaters up to recover pressure.',
+    ],
+    objectives: [
+      {
+        id: 'flagged',
+        text: 'Notice a display has been flagged as suspect',
+        check: (s) => (s?.hmi_faulted.length ?? 0) > 0,
+      },
+      {
+        id: 'csf',
+        text: 'A safety function goes off-normal while the gauge still looks fine',
+        check: (s) =>
+          (s?.csf.some((c) => c.name === 'PRIMARY INVENTORY' && c.status !== 'Normal') ?? false) &&
+          (s?.sim_time ?? 0) > 120,
+      },
+      {
+        id: 'manual',
+        text: 'Take the pressurizer off automatic control',
+        check: (s) => s?.controllers.mode_pzr_auto === false,
+      },
+      {
+        id: 'recover',
+        text: 'Restore the primary-inventory safety function to normal',
+        check: (s) =>
+          s?.controllers.mode_pzr_auto === false &&
+          (s?.csf.some((c) => c.name === 'PRIMARY INVENTORY' && c.status === 'Normal') ?? false) &&
+          (s?.sim_time ?? 0) > 140,
       },
     ],
   },

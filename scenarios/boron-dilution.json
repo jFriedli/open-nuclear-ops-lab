@@ -1,0 +1,16 @@
+{
+  "id": "boron-dilution",
+  "name": "Inadvertent Boron Dilution",
+  "description": "Unborated water is added to the reactor coolant system, slowly washing out the soluble boron. Boron concentration falls, adding positive reactivity; in automatic rod control the rods drive in to compensate and hold power, so the first sign is falling rod position, not rising power. Left alone, the rods reach their limit and power climbs to the high-power trip.",
+  "initial": "hot_full_power",
+  "seed": 20260912,
+  "briefing": "From t+20 s coolant boron is being diluted at about 0.6 ppm/s. Watch the reactivity balance and control-rod position on the Reactor page: automatic control is masking the problem by inserting rods. Borate on the Containment & Safeguards page to arrest the dilution before rod position or power reach a limit.",
+  "learning_objectives": [
+    "See how automatic control can mask a slow reactivity fault",
+    "Read the boron and rod-position trends as the real indication",
+    "Use boration to counter an unwanted positive reactivity addition"
+  ],
+  "events": [
+    { "time": 20, "target": "boron", "action": "ramp", "value": -0.6, "duration": 5, "recover_after": 400, "label": "Boron dilution begins (-0.6 ppm/s)" }
+  ]
+}

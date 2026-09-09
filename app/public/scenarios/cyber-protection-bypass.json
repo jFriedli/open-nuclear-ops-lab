@@ -1,0 +1,18 @@
+{
+  "id": "cyber-protection-bypass",
+  "name": "Cyber - Protection Bypass and Overpower",
+  "description": "An attacker suppresses the automatic reactor-trip function, then injects a rod-withdrawal command. Reactor power climbs past the high-power trip setpoint and the trip does not act. One thing still works: a separate annunciator reports that a trip was demanded and not actuated. The operator must recognise the defeated protection and trip the reactor by hand.",
+  "initial": "hot_full_power",
+  "seed": 20260914,
+  "briefing": "This is an educational information-security exercise. From t+20 s the automatic reactor trip has been bypassed. From t+25 s a rod-withdrawal command is being injected, so power rises through its normal trip point with no automatic response. Watch for the REACTOR TRIP DEMANDED BUT NOT ACTUATED alarm, confirm power is genuinely climbing, and use the manual reactor trip.",
+  "learning_objectives": [
+    "Recognise a defeated automatic protection function from its demand-vs-actuation alarm",
+    "Confirm a real excursion before acting, using power, temperature and reactivity",
+    "Use the manual scram as an independent shutdown path",
+    "Understand why safety functions need diverse, separately-protected actuation"
+  ],
+  "events": [
+    { "time": 20, "target": "protection.reactor_trip", "action": "inhibit", "label": "Automatic reactor trip bypassed" },
+    { "time": 25, "target": "control.rods", "action": "withdraw", "recover_after": 240, "label": "Injected rod-withdrawal command" }
+  ]
+}

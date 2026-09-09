@@ -69,6 +69,31 @@ const SCENARIOS: &[(&str, &str)] = &[
         include_str!("../../scenarios/signal-bias-pressure.json"),
     ),
     ("sloca", include_str!("../../scenarios/small-loca.json")),
+    ("sgtr", include_str!("../../scenarios/sg-tube-rupture.json")),
+    (
+        "atws",
+        include_str!("../../scenarios/anticipated-transient-without-scram.json"),
+    ),
+    (
+        "dilution",
+        include_str!("../../scenarios/boron-dilution.json"),
+    ),
+    (
+        "cyber-sp",
+        include_str!("../../scenarios/cyber-setpoint-manipulation.json"),
+    ),
+    (
+        "cyber-bypass",
+        include_str!("../../scenarios/cyber-protection-bypass.json"),
+    ),
+    (
+        "cyber-lov",
+        include_str!("../../scenarios/cyber-loss-of-view.json"),
+    ),
+    (
+        "cooldown",
+        include_str!("../../scenarios/cooldown-drill.json"),
+    ),
 ];
 
 fn finite(v: &Value) -> bool {
@@ -237,6 +262,195 @@ fn small_loca_trips_the_reactor_and_actuates_safety_injection() {
     // Fission is shut down; decay heat remains.
     assert!(s1["physical"]["neutron_power"].as_f64().unwrap() < 0.05);
     assert!(s1["physical"]["decay_heat"].as_f64().unwrap() > 0.012);
+}
+
+fn run_secs(json: &str, seed: f64, secs: f64) -> (Engine, Value) {
+    let mut e = Engine::new(json, seed).unwrap();
+    e.set_debug(true);
+    e.step((secs / e.dt()).round() as u32);
+    let s = serde_json::from_str(&e.snapshot()).unwrap();
+    (e, s)
+}
+
+fn raised(s: &Value, id: &str) -> bool {
+    s["alarm_history"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|a| a["id"] == id && a["transition"] == "raised")
+}
+
+#[test]
+fn sg_tube_rupture_fills_the_affected_sg_and_trips() {
+    let json = include_str!("../../scenarios/sg-tube-rupture.json");
+    let (_e, s) = run_secs(json, 4242.0, 200.0);
+    assert!(
+        s["safety"]["sg_ruptured"][0].as_bool().unwrap(),
+        "SG-1 not flagged ruptured"
+    );
+    assert!(
+        !s["safety"]["sg_ruptured"][1].as_bool().unwrap(),
+        "SG-2 wrongly flagged"
+    );
+    assert!(raised(&s, "SGTR"), "no tube-rupture alarm");
+    assert!(
+        s["physical"]["sg"][0]["level_pct"].as_f64().unwrap()
+            > s["physical"]["sg"][1]["level_pct"].as_f64().unwrap() + 10.0,
+        "ruptured SG did not fill relative to the intact one"
+    );
+    assert!(
+        s["controllers"]["reactor_trip_latched"].as_bool().unwrap(),
+        "reactor never tripped"
+    );
+    assert!(
+        s["physical"]["cnmt_pressure"].as_f64().unwrap() < 2.0,
+        "leak wrongly reached containment"
+    );
+}
+
+#[test]
+fn atws_leaves_the_reactor_at_power_until_a_manual_scram() {
+    let json = include_str!("../../scenarios/anticipated-transient-without-scram.json");
+    let mut e = Engine::new(json, 99.0).unwrap();
+    e.set_debug(true);
+    // Automatic trip is demanded (turbine trip) but rods do not insert.
+    e.step((60.0 / e.dt()).round() as u32);
+    let s: Value = serde_json::from_str(&e.snapshot()).unwrap();
+    assert!(
+        s["controllers"]["reactor_trip_latched"].as_bool().unwrap(),
+        "no trip demand"
+    );
+    assert!(
+        s["physical"]["rod_pos"].as_f64().unwrap() > 0.5,
+        "rods dropped despite ATWS"
+    );
+    assert!(
+        s["hmi"]["neutron_power"].as_f64().unwrap() > 40.0,
+        "power collapsed without a scram"
+    );
+    assert!(raised(&s, "SCRAM_INCOMPLETE"), "no scram-incomplete alarm");
+
+    // The diverse manual scram still works.
+    e.action(r#"{"type":"trip_reactor"}"#);
+    e.step((15.0 / e.dt()).round() as u32);
+    let s2: Value = serde_json::from_str(&e.snapshot()).unwrap();
+    assert!(
+        s2["physical"]["rod_pos"].as_f64().unwrap() < 0.05,
+        "manual scram did not insert the rods"
+    );
+    assert!(
+        s2["hmi"]["neutron_power"].as_f64().unwrap() < 5.0,
+        "power did not collapse after manual scram"
+    );
+}
+
+#[test]
+fn boron_dilution_is_masked_by_rod_control() {
+    let json = include_str!("../../scenarios/boron-dilution.json");
+    let (_e, s) = run_secs(json, 7.0, 240.0);
+    assert!(
+        s["safety"]["boron_ppm"].as_f64().unwrap() < 830.0,
+        "boron did not fall from dilution"
+    );
+    // Automatic rod control holds power roughly constant by inserting rods.
+    assert!(
+        (s["hmi"]["neutron_power"].as_f64().unwrap() - 100.0).abs() < 8.0,
+        "power not held by rod control"
+    );
+    assert!(
+        s["physical"]["rod_pos"].as_f64().unwrap() < 0.71,
+        "rods did not insert to compensate the dilution"
+    );
+    assert!(!s["controllers"]["reactor_trip_latched"].as_bool().unwrap());
+}
+
+#[test]
+fn cyber_setpoint_manipulation_depressurises_behind_a_spoofed_gauge() {
+    let json = include_str!("../../scenarios/cyber-setpoint-manipulation.json");
+    let (_e, s) = run_secs(json, 13.0, 150.0);
+    let shown = s["hmi"]["primary_pressure"].as_f64().unwrap();
+    let truth = s["physical"]["primary_pressure"].as_f64().unwrap();
+    assert!(
+        (shown - 15.5).abs() < 0.2,
+        "displayed pressure not spoofed to normal"
+    );
+    assert!(truth < 14.2, "real pressure did not fall: {truth}");
+    // The suppressed alarm never shows...
+    assert!(
+        s["alarms"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|a| a["id"] != "PRESS_LO" || !a["active"].as_bool().unwrap()),
+        "low-pressure alarm was not suppressed"
+    );
+    // ...but the safety-function strip still tells the truth.
+    let inv = s["csf"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|c| c["name"] == "PRIMARY INVENTORY")
+        .unwrap()["status"]
+        .as_str()
+        .unwrap();
+    assert_ne!(inv, "Normal", "CSF should flag the real depressurisation");
+    assert!(s["hmi_faulted"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|x| x == "primary_pressure"));
+}
+
+#[test]
+fn cyber_protection_bypass_allows_overpower_with_no_trip() {
+    let json = include_str!("../../scenarios/cyber-protection-bypass.json");
+    let (mut e, s) = run_secs(json, 14.0, 60.0);
+    assert!(
+        s["hmi"]["neutron_power"].as_f64().unwrap() > 112.0,
+        "power did not exceed the trip setpoint"
+    );
+    assert!(
+        !s["controllers"]["reactor_trip_latched"].as_bool().unwrap(),
+        "reactor tripped even though protection was bypassed"
+    );
+    assert!(
+        s["controllers"]["reactor_trip_blocked"].as_bool().unwrap(),
+        "block flag not set"
+    );
+    assert!(raised(&s, "RX_TRIP_BLOCKED"), "no trip-suppressed alarm");
+    // The manual scram is not on the bypassed path.
+    e.action(r#"{"type":"trip_reactor"}"#);
+    e.step((10.0 / e.dt()).round() as u32);
+    let s2: Value = serde_json::from_str(&e.snapshot()).unwrap();
+    assert!(s2["controllers"]["reactor_trip_latched"].as_bool().unwrap());
+    assert!(
+        s2["hmi"]["neutron_power"].as_f64().unwrap() < 10.0,
+        "manual scram did not work"
+    );
+}
+
+#[test]
+fn cyber_loss_of_view_freezes_gauges_but_not_protection() {
+    let json = include_str!("../../scenarios/cyber-loss-of-view.json");
+    let (_e, s) = run_secs(json, 15.0, 150.0);
+    // Frozen displays still read ~normal...
+    assert!(
+        (s["hmi"]["sg1_level"].as_f64().unwrap() - 65.0).abs() < 6.0,
+        "SG-1 display not frozen"
+    );
+    // ...while the true level has fallen and protection has acted on it.
+    assert!(
+        s["physical"]["sg"][0]["level_pct"].as_f64().unwrap() < 40.0,
+        "true SG level did not fall"
+    );
+    assert!(
+        s["controllers"]["reactor_trip_latched"].as_bool().unwrap(),
+        "protection did not act on the true value"
+    );
+    assert!(
+        s["hmi_faulted"].as_array().unwrap().len() >= 3,
+        "multiple displays should be flagged"
+    );
 }
 
 #[test]

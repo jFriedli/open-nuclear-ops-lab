@@ -58,5 +58,14 @@ test('the deployed site loads, runs the engine, and completes a LOOP scenario', 
   await page.getByRole('link', { name: 'Containment & Safeguards', exact: true }).click();
   await expect(page.getByText('ACTUATED', { exact: true })).toBeVisible({ timeout: 30_000 });
 
+  // The cyber-physical milestone works on the live site.
+  await page.getByRole('link', { name: 'Scenario / Instructor', exact: true }).click();
+  await page.getByText('Cyber - Protection Bypass and Overpower').click();
+  await page.getByRole('button', { name: /START SCENARIO/ }).click();
+  await page.getByRole('button', { name: '10×', exact: true }).click();
+  await expect(page.locator('app-coach-bar .coach')).toContainText(/NOT shut down/i, {
+    timeout: 30_000,
+  });
+
   expect(errors, errors.join('\n')).toEqual([]);
 });

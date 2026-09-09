@@ -13,15 +13,49 @@ import { SimService } from '../sim/sim.service';
     <div class="grid cols">
       @for (k of [1, 2]; track k) {
         <section class="panel" [id]="'w-sg' + k">
-          <h2>Steam generator {{ k }}</h2>
-          <nol-readout label="Level (narrow range)" [value]="h('sg' + k + '_level')" units="%" [dp]="1"
-            [deviation]="dev('sg' + k + '_level')" [flag]="faultFlag('sg' + k + '_level')" [level]="sgLevel(k)" />
-          <nol-bar [value]="h('sg' + k + '_level')" [min]="0" [max]="100" [markers]="[25, 65, 85]" [level]="sgLevel(k)" />
-          <nol-readout label="Steam pressure" [value]="h('sg' + k + '_pressure')" units="MPa" [dp]="2" />
-          <nol-readout label="Steam flow" [value]="h('sg' + k + '_steam_flow')" units="%" [dp]="1" />
+          <h2>
+            Steam generator {{ k }}
+            @if (ruptured()[k - 1]) {
+              <nol-pill text="TUBE RUPTURE" cls="bad" />
+            }
+          </h2>
+          @if (ruptured()[k - 1]) {
+            <p class="dim sm">
+              Reactor coolant is leaking into this generator. Its steam is contaminated — do not
+              release it to atmosphere. Lower primary pressure to stop the leak.
+            </p>
+          }
+          <nol-readout
+            label="Level (narrow range)"
+            [value]="h('sg' + k + '_level')"
+            units="%"
+            [dp]="1"
+            [deviation]="dev('sg' + k + '_level')"
+            [flag]="faultFlag('sg' + k + '_level')"
+            [level]="sgLevel(k)"
+          />
+          <nol-bar
+            [value]="h('sg' + k + '_level')"
+            [min]="0"
+            [max]="100"
+            [markers]="[25, 65, 85]"
+            [level]="sgLevel(k)"
+          />
+          <nol-readout
+            label="Steam pressure"
+            [value]="h('sg' + k + '_pressure')"
+            units="MPa"
+            [dp]="2"
+          />
+          <nol-readout
+            label="Steam flow"
+            [value]="h('sg' + k + '_steam_flow')"
+            units="%"
+            [dp]="1"
+          />
           <nol-readout label="Feed flow" [value]="h('sg' + k + '_fw_flow')" units="%" [dp]="1" />
           @if (phys(); as p) {
-            <div class="dim sm">Primary → SG heat: {{ (p.sg[k - 1].heat_in).toFixed(0) }} MW</div>
+            <div class="dim sm">Primary → SG heat: {{ p.sg[k - 1].heat_in.toFixed(0) }} MW</div>
           }
         </section>
       }
@@ -39,15 +73,31 @@ import { SimService } from '../sim/sim.service';
         }
         <div class="row">
           <span class="dim">Aux feedwater</span>
-          <nol-pill [text]="afwOn() ? 'RUNNING (auto)' : 'STANDBY'" [cls]="afwOn() ? 'on' : 'off'" />
+          <nol-pill
+            [text]="afwOn() ? 'RUNNING (auto)' : 'STANDBY'"
+            [cls]="afwOn() ? 'on' : 'off'"
+          />
         </div>
         <div class="row">
           <span class="dim">Feedwater control</span>
-          <nol-pill [text]="ctl().mode_fw_auto ? 'AUTO (3-element)' : 'MANUAL'" [cls]="ctl().mode_fw_auto ? 'on' : 'hold'" />
-          <button (click)="setFwMode(!ctl().mode_fw_auto)">{{ ctl().mode_fw_auto ? 'Manual' : 'Auto' }}</button>
+          <nol-pill
+            [text]="ctl().mode_fw_auto ? 'AUTO (3-element)' : 'MANUAL'"
+            [cls]="ctl().mode_fw_auto ? 'on' : 'hold'"
+          />
+          <button (click)="setFwMode(!ctl().mode_fw_auto)">
+            {{ ctl().mode_fw_auto ? 'Manual' : 'Auto' }}
+          </button>
         </div>
-        <label class="row">SG level setpoint
-          <input type="range" min="45" max="75" step="1" [ngModel]="lvlSp()" (ngModelChange)="setLvlSp($event)" />
+        <label class="row"
+          >SG level setpoint
+          <input
+            type="range"
+            min="45"
+            max="75"
+            step="1"
+            [ngModel]="lvlSp()"
+            (ngModelChange)="setLvlSp($event)"
+          />
           <span class="num">{{ lvlSp().toFixed(0) }}%</span>
         </label>
         <div class="mt"><nol-mini-trend [keys]="['sg1_level', 'sg2_level', 'sg1_fw_flow']" /></div>
@@ -55,14 +105,27 @@ import { SimService } from '../sim/sim.service';
 
       <section class="panel" id="w-turbine">
         <h2>Turbine / generator</h2>
-        <nol-readout label="Turbine speed" [value]="h('turbine_speed')" units="%" [dp]="1"
-          [level]="h('turbine_speed') > 103 ? 'alarm' : 'normal'" />
-        <nol-bar [value]="h('turbine_speed')" [min]="0" [max]="115" [markers]="[100, 106]"
-          [level]="h('turbine_speed') > 103 ? 'alarm' : 'normal'" />
+        <nol-readout
+          label="Turbine speed"
+          [value]="h('turbine_speed')"
+          units="%"
+          [dp]="1"
+          [level]="h('turbine_speed') > 103 ? 'alarm' : 'normal'"
+        />
+        <nol-bar
+          [value]="h('turbine_speed')"
+          [min]="0"
+          [max]="115"
+          [markers]="[100, 106]"
+          [level]="h('turbine_speed') > 103 ? 'alarm' : 'normal'"
+        />
         <nol-readout label="Generator output" [value]="h('generator_mw')" units="MW" [dp]="0" />
         <div class="row">
           <span class="dim">Generator breaker</span>
-          <nol-pill [text]="elec().generator_online ? 'CLOSED' : 'OPEN'" [cls]="elec().generator_online ? 'on' : 'off'" />
+          <nol-pill
+            [text]="elec().generator_online ? 'CLOSED' : 'OPEN'"
+            [cls]="elec().generator_online ? 'on' : 'off'"
+          />
           <button (click)="connectGen(!elec().generator_online)">
             {{ elec().generator_online ? 'Trip breaker' : 'Synchronise' }}
           </button>
@@ -73,26 +136,53 @@ import { SimService } from '../sim/sim.service';
             <span class="dim">Steam dump {{ (p.steam_dump * 100).toFixed(0) }}%</span>
           </div>
         }
-        <label class="row">Load target
-          <input type="range" min="0" max="100" step="1" [ngModel]="loadSp()" (ngModelChange)="setLoadSp($event)"
-            [disabled]="ttrip()" />
+        <label class="row"
+          >Load target
+          <input
+            type="range"
+            min="0"
+            max="100"
+            step="1"
+            [ngModel]="loadSp()"
+            (ngModelChange)="setLoadSp($event)"
+            [disabled]="ttrip()"
+          />
           <span class="num">{{ loadSp().toFixed(0) }}%</span>
         </label>
         <div class="row">
-          <button class="danger" (click)="tripTurbine()" [disabled]="ttrip()">MANUAL TURBINE TRIP</button>
-          @if (ttrip()) { <nol-pill text="TRIPPED" cls="bad" /> }
+          <button class="danger" (click)="tripTurbine()" [disabled]="ttrip()">
+            MANUAL TURBINE TRIP
+          </button>
+          @if (ttrip()) {
+            <nol-pill text="TRIPPED" cls="bad" />
+          }
         </div>
       </section>
 
       <section class="panel" id="w-condenser">
         <h2>Condenser</h2>
-        <nol-readout label="Backpressure" [value]="h('condenser_pressure')" units="kPa" [dp]="1"
-          [level]="h('condenser_pressure') > 12 ? 'warn' : 'normal'" />
+        <nol-readout
+          label="Backpressure"
+          [value]="h('condenser_pressure')"
+          units="kPa"
+          [dp]="1"
+          [level]="h('condenser_pressure') > 12 ? 'warn' : 'normal'"
+        />
         @if (phys(); as p) {
-          <nol-readout label="Cooling effectiveness" [value]="p.condenser_effectiveness * 100" units="%" [dp]="0" />
+          <nol-readout
+            label="Cooling effectiveness"
+            [value]="p.condenser_effectiveness * 100"
+            units="%"
+            [dp]="0"
+          />
         }
-        <nol-bar [value]="h('condenser_pressure')" [min]="0" [max]="25" [markers]="[12, 20]"
-          [level]="h('condenser_pressure') > 12 ? 'warn' : 'normal'" />
+        <nol-bar
+          [value]="h('condenser_pressure')"
+          [min]="0"
+          [max]="25"
+          [markers]="[12, 20]"
+          [level]="h('condenser_pressure') > 12 ? 'warn' : 'normal'"
+        />
         <div class="mt"><nol-mini-trend [keys]="['generator_mw', 'condenser_pressure']" /></div>
       </section>
     </div>
@@ -138,6 +228,7 @@ export class SecondaryComponent extends ViewBase {
   readonly ttrip = computed(() => this.snap()?.controllers.turbine_trip_latched ?? false);
   readonly mfw = computed(() => this.snap()?.equipment.mfw_pump ?? [true, true]);
   readonly afwOn = computed(() => this.snap()?.equipment.afw_on ?? false);
+  readonly ruptured = computed(() => this.snap()?.safety.sg_ruptured ?? [false, false]);
   readonly acPower = computed(() => {
     const e = this.snap()?.electrical;
     return !!e && (e.offsite_power || (e.generator_online && e.generator_mw > 5));

@@ -143,6 +143,7 @@ fn truth(state: &PhysicalState, source: &str) -> f64 {
         "cnmt_temp" => state.cnmt_temp,
         "cnmt_sump" => state.cnmt_sump,
         "accum_level" => state.accumulator_frac * 100.0,
+        "sgtr_leak" => (state.sgtr_leak[0] + state.sgtr_leak[1]) * 100.0,
         _ => 0.0,
     }
 }
@@ -198,6 +199,7 @@ impl Instrumentation {
             ("cnmt_temp", "cnmt_temp", "degC", 0.4),
             ("cnmt_sump", "cnmt_sump", "%", 0.3),
             ("accum_level", "accum_level", "%", 0.5),
+            ("sgtr_leak", "sgtr_leak", "%", 0.02),
         ];
         for (key, src, units, noise) in single {
             signals.push(MeasuredSignal {

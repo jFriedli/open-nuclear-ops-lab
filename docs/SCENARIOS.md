@@ -60,14 +60,23 @@ scale, and remain deterministic.
 | `cnmt.isolate` | containment phase-A isolation | `start` (close) / `stop` (open) |
 | `cnmt.spray` | containment spray | `start` / `stop` |
 | `boron` | operator boration / dilution | `set`, `ramp` (value = ppm/s, + borate / − dilute) |
+| `sgtr.0`, `sgtr.1` | steam-generator tube rupture | `start` (value = leak size 0..1, default 0.4) |
+| `rods` | control rods | `fail` (ATWS: rods do not insert on an automatic trip) |
+| `protection.reactor_trip`, `protection.turbine_trip` | **cyber** – suppress the trip latch | `inhibit` / `restore` |
+| `control.pzr_setpoint`, `control.sg_level_setpoint` | **cyber** – silently move a controller setpoint | `set` (value = new setpoint), `ramp` |
+| `control.rods` | **cyber** – inject a rod-drive command | `withdraw` / `insert` / `hold` |
+| `alarm.<ID>` | **cyber** – suppress one annunciator window | `inhibit` / `restore` (IDs: `RX_TRIP`, `PRESS_LO`, `SGTR`, …) |
 | `instrument.<signal>[.<A\|B\|C>]` | one raw sensor channel | `stuck`, `drift`, `bias`, `noise`, `fail_low`, `fail_high` |
 | `signal.<signal>` | the voted / processed value feeding **control *and* HMI** | `stuck`, `bias`, `scale`, `set` |
 | `hmi.<signal>` | the **displayed** value only - control, protection, alarms and CSF unaffected | `stuck`, `bias`, `scale`, `set` |
 
 `<signal>` is any key from the HMI list (`neutron_power`, `primary_pressure`,
 `pzr_level`, `t_avg`, `sg1_level`, `sg2_level`, `rod_pos`, `cnmt_pressure`,
-`boron_ppm`, `cnmt_temp`, `cnmt_sump`, `accum_level`, …). Omitting the channel
-letter targets the first/only channel.
+`boron_ppm`, `cnmt_temp`, `cnmt_sump`, `accum_level`, `sgtr_leak`, …). Omitting
+the channel letter targets the first/only channel.
+
+The `protection.*`, `control.*` and `alarm.*` targets model **cyber-physical
+manipulation** and are described in [CYBER.md](./CYBER.md).
 
 ### Instrument fault semantics
 
@@ -101,6 +110,10 @@ Single-fault (one per required initial event type):
 | `control-rod-position-disagreement.json` | position indication vs. core power |
 | `porv-stuck-open.json` | small loss-of-inventory event |
 | `small-loca.json` | loss of coolant → SI actuation, containment isolation & pressurisation |
+| `sg-tube-rupture.json` | primary-to-secondary leak; identify and isolate the affected SG |
+| `boron-dilution.json` | slow reactivity fault masked by automatic rod control |
+| `anticipated-transient-without-scram.json` | automatic scram fails; diverse manual scram + boration |
+| `cooldown-drill.json` | coordinated cooldown toward cold shutdown |
 | `degraded-condenser.json` | slow BOP degradation → high-backpressure trip |
 | `generic-instrumentation-failure.json` | multiple unrelated instrument faults, **no** process fault |
 
@@ -118,6 +131,14 @@ Fault-layer demonstrations (see [INSTRUMENTATION.md](./INSTRUMENTATION.md)):
 |---|---|
 | `hmi-spoofed-sg-level.json` | HMI-layer fault: frozen gauge while feedwater is lost - automation still acts |
 | `signal-bias-pressure.json` | signal-processing fault: biased value fools controller + display, no channel disagreement |
+
+Cyber-physical (educational information-security exercises, see [CYBER.md](./CYBER.md)):
+
+| File | Focus |
+|---|---|
+| `cyber-setpoint-manipulation.json` | tampered controller setpoint + spoofed gauge + suppressed alarm |
+| `cyber-protection-bypass.json` | automatic reactor trip suppressed + injected rod withdrawal |
+| `cyber-loss-of-view.json` | several displays frozen during a real feedwater loss |
 
 ## Session record & replay
 

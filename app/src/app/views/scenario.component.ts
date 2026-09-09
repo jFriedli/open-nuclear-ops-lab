@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ViewBase } from './view-base';
 import { SimService } from '../sim/sim.service';
@@ -12,23 +19,138 @@ interface InjectForm {
   duration: number;
 }
 
-const INJECTIONS: { label: string; target: string; action: string; value: number; hint: string }[] = [
-  { label: 'Trip RCP-1', target: 'rcp.0', action: 'trip', value: 0, hint: 'process' },
-  { label: 'Trip main feedwater pump A', target: 'mfw.0', action: 'trip', value: 0, hint: 'process' },
-  { label: 'Turbine trip', target: 'turbine', action: 'trip', value: 0, hint: 'process' },
-  { label: 'Loss of off-site power', target: 'electrical.offsite', action: 'trip', value: 0, hint: 'process' },
-  { label: 'Grid load rejection', target: 'electrical.grid', action: 'trip', value: 0, hint: 'process' },
-  { label: 'EDG A unavailable', target: 'edg.a', action: 'fail', value: 0, hint: 'equipment' },
-  { label: 'Relief valve stuck 30% open', target: 'valve.porv', action: 'stuck', value: 0.3, hint: 'process' },
-  { label: 'Condenser degrade to 40%', target: 'condenser', action: 'degrade', value: 0.4, hint: 'process' },
-  { label: 'SG-1 level ch. B drift +0.2/s', target: 'instrument.sg1_level.B', action: 'drift', value: 0.2, hint: 'instrument' },
-  { label: 'Primary pressure ch. A stuck', target: 'instrument.primary_pressure.A', action: 'stuck', value: 0, hint: 'instrument' },
-  { label: 'Neutron power ch. C fail low', target: 'instrument.neutron_power.C', action: 'fail_low', value: 0, hint: 'instrument' },
-  { label: 'External reactivity −150 pcm ramp', target: 'physical.rho_external', action: 'ramp', value: -0.0015, hint: 'process' },
-  { label: 'Signal bias: primary pressure +0.8 MPa', target: 'signal.primary_pressure', action: 'bias', value: 0.8, hint: 'signal' },
-  { label: 'HMI: freeze SG-1 level on screen', target: 'hmi.sg1_level', action: 'stuck', value: 0, hint: 'HMI' },
-  { label: 'HMI: spoof neutron power to 100%', target: 'hmi.neutron_power', action: 'set', value: 100, hint: 'HMI' },
-];
+const INJECTIONS: { label: string; target: string; action: string; value: number; hint: string }[] =
+  [
+    { label: 'Trip RCP-1', target: 'rcp.0', action: 'trip', value: 0, hint: 'process' },
+    {
+      label: 'Trip main feedwater pump A',
+      target: 'mfw.0',
+      action: 'trip',
+      value: 0,
+      hint: 'process',
+    },
+    { label: 'Turbine trip', target: 'turbine', action: 'trip', value: 0, hint: 'process' },
+    {
+      label: 'Loss of off-site power',
+      target: 'electrical.offsite',
+      action: 'trip',
+      value: 0,
+      hint: 'process',
+    },
+    {
+      label: 'Grid load rejection',
+      target: 'electrical.grid',
+      action: 'trip',
+      value: 0,
+      hint: 'process',
+    },
+    { label: 'EDG A unavailable', target: 'edg.a', action: 'fail', value: 0, hint: 'equipment' },
+    {
+      label: 'Relief valve stuck 30% open',
+      target: 'valve.porv',
+      action: 'stuck',
+      value: 0.3,
+      hint: 'process',
+    },
+    {
+      label: 'Condenser degrade to 40%',
+      target: 'condenser',
+      action: 'degrade',
+      value: 0.4,
+      hint: 'process',
+    },
+    {
+      label: 'SG-1 level ch. B drift +0.2/s',
+      target: 'instrument.sg1_level.B',
+      action: 'drift',
+      value: 0.2,
+      hint: 'instrument',
+    },
+    {
+      label: 'Primary pressure ch. A stuck',
+      target: 'instrument.primary_pressure.A',
+      action: 'stuck',
+      value: 0,
+      hint: 'instrument',
+    },
+    {
+      label: 'Neutron power ch. C fail low',
+      target: 'instrument.neutron_power.C',
+      action: 'fail_low',
+      value: 0,
+      hint: 'instrument',
+    },
+    {
+      label: 'External reactivity −150 pcm ramp',
+      target: 'physical.rho_external',
+      action: 'ramp',
+      value: -0.0015,
+      hint: 'process',
+    },
+    {
+      label: 'Signal bias: primary pressure +0.8 MPa',
+      target: 'signal.primary_pressure',
+      action: 'bias',
+      value: 0.8,
+      hint: 'signal',
+    },
+    {
+      label: 'HMI: freeze SG-1 level on screen',
+      target: 'hmi.sg1_level',
+      action: 'stuck',
+      value: 0,
+      hint: 'HMI',
+    },
+    {
+      label: 'HMI: spoof neutron power to 100%',
+      target: 'hmi.neutron_power',
+      action: 'set',
+      value: 100,
+      hint: 'HMI',
+    },
+    {
+      label: 'SG-1 tube rupture (35%)',
+      target: 'sgtr.0',
+      action: 'start',
+      value: 0.35,
+      hint: 'process',
+    },
+    {
+      label: 'ATWS: rods fail to insert',
+      target: 'rods',
+      action: 'fail',
+      value: 0,
+      hint: 'equipment',
+    },
+    {
+      label: 'Cyber: bypass automatic reactor trip',
+      target: 'protection.reactor_trip',
+      action: 'inhibit',
+      value: 0,
+      hint: 'cyber',
+    },
+    {
+      label: 'Cyber: pzr pressure setpoint → 13.5',
+      target: 'control.pzr_setpoint',
+      action: 'set',
+      value: 13.5,
+      hint: 'cyber',
+    },
+    {
+      label: 'Cyber: inject rod-withdrawal command',
+      target: 'control.rods',
+      action: 'withdraw',
+      value: 0,
+      hint: 'cyber',
+    },
+    {
+      label: 'Cyber: suppress low-pressure alarm',
+      target: 'alarm.PRESS_LO',
+      action: 'inhibit',
+      value: 0,
+      hint: 'cyber',
+    },
+  ];
 
 @Component({
   selector: 'nol-scenario',
@@ -47,17 +169,25 @@ const INJECTIONS: { label: string; target: string; action: string; value: number
             </div>
           }
           @for (s of customScenarios(); track s.id) {
-            <div class="scen custom" [class.sel]="selectedCustomId() === s.id" (click)="selectCustom(s.id)">
+            <div
+              class="scen custom"
+              [class.sel]="selectedCustomId() === s.id"
+              (click)="selectCustom(s.id)"
+            >
               <b>{{ s.name }} <span class="tag warn">custom</span></b>
               <button class="danger sm" (click)="deleteCustom(s.id, $event)">delete</button>
             </div>
           }
         </div>
         <div class="row">
-          <button class="primary" (click)="startSelected()" [disabled]="!currentJson()">▶ START SCENARIO</button>
+          <button class="primary" (click)="startSelected()" [disabled]="!currentJson()">
+            ▶ START SCENARIO
+          </button>
           <button (click)="reset()">RESET CURRENT</button>
         </div>
-        @if (loadMsg(); as m) { <p class="dim sm" [class.err]="!loadOk()">{{ m }}</p> }
+        @if (loadMsg(); as m) {
+          <p class="dim sm" [class.err]="!loadOk()">{{ m }}</p>
+        }
       </section>
 
       <section class="panel">
@@ -67,16 +197,31 @@ const INJECTIONS: { label: string; target: string; action: string; value: number
           <p>{{ d.briefing || d.description }}</p>
           @if (d.learning_objectives?.length) {
             <h4>Learning objectives</h4>
-            <ul>@for (o of d.learning_objectives; track o) { <li>{{ o }}</li> }</ul>
+            <ul>
+              @for (o of d.learning_objectives; track o) {
+                <li>{{ o }}</li>
+              }
+            </ul>
           }
           @if (d.events.length) {
             <h4>Scripted events</h4>
             <table>
-              <thead><tr><th>t (s)</th><th>Target</th><th>Action</th><th>Value</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>t (s)</th>
+                  <th>Target</th>
+                  <th>Action</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
               <tbody>
                 @for (ev of d.events; track $index) {
-                  <tr><td class="num">{{ ev.time }}</td><td class="mono">{{ ev.target }}</td>
-                    <td class="mono">{{ ev.action }}</td><td class="num">{{ ev.value ?? '' }}</td></tr>
+                  <tr>
+                    <td class="num">{{ ev.time }}</td>
+                    <td class="mono">{{ ev.target }}</td>
+                    <td class="mono">{{ ev.action }}</td>
+                    <td class="num">{{ ev.value ?? '' }}</td>
+                  </tr>
                 }
               </tbody>
             </table>
@@ -90,7 +235,10 @@ const INJECTIONS: { label: string; target: string; action: string; value: number
         <h2>Instructor - manual fault injection</h2>
         <div class="chips">
           @for (inj of injections; track inj.label) {
-            <button (click)="quickInject(inj)" [title]="inj.target + ' ' + inj.action + ' ' + inj.value">
+            <button
+              (click)="quickInject(inj)"
+              [title]="inj.target + ' ' + inj.action + ' ' + inj.value"
+            >
               {{ inj.label }} <em class="dim">{{ inj.hint }}</em>
             </button>
           }
@@ -98,12 +246,24 @@ const INJECTIONS: { label: string; target: string; action: string; value: number
         <details>
           <summary>Custom injection</summary>
           <div class="form">
-            <label>Target <input [(ngModel)]="form.target" placeholder="e.g. instrument.t_avg.A" /></label>
-            <label>Action
+            <label
+              >Target <input [(ngModel)]="form.target" placeholder="e.g. instrument.t_avg.A"
+            /></label>
+            <label
+              >Action
               <select [(ngModel)]="form.action">
-                <option>set</option><option>ramp</option><option>trip</option><option>start</option>
-                <option>stuck</option><option>drift</option><option>bias</option><option>noise</option>
-                <option>fail_low</option><option>fail_high</option><option>degrade</option><option>restore</option>
+                <option>set</option>
+                <option>ramp</option>
+                <option>trip</option>
+                <option>start</option>
+                <option>stuck</option>
+                <option>drift</option>
+                <option>bias</option>
+                <option>noise</option>
+                <option>fail_low</option>
+                <option>fail_high</option>
+                <option>degrade</option>
+                <option>restore</option>
               </select>
             </label>
             <label>Value <input type="number" step="0.001" [(ngModel)]="form.value" /></label>
@@ -114,31 +274,51 @@ const INJECTIONS: { label: string; target: string; action: string; value: number
         <div class="row">
           <button (click)="clearInjections()">Clear all manual injections</button>
         </div>
-        @if (injectMsg(); as m) { <p class="dim sm">{{ m }}</p> }
+        @if (injectMsg(); as m) {
+          <p class="dim sm">{{ m }}</p>
+        }
       </section>
 
       <section class="panel">
         <h2>Session record &amp; replay</h2>
-        <p class="dim sm">Every operator command is recorded with its simulation tick. Export a
-          self-contained session (scenario + seed + action tape) and replay it later - the
-          deterministic engine reproduces the run exactly.</p>
+        <p class="dim sm">
+          Every operator command is recorded with its simulation tick. Export a self-contained
+          session (scenario + seed + action tape) and replay it later - the deterministic engine
+          reproduces the run exactly.
+        </p>
         <div class="row">
           <button (click)="exportSession()">Export current session</button>
-          <button (click)="replaySession()" [disabled]="!sessionText.trim()">Load &amp; replay session</button>
+          <button (click)="replaySession()" [disabled]="!sessionText.trim()">
+            Load &amp; replay session
+          </button>
         </div>
-        <textarea [(ngModel)]="sessionText" rows="6" placeholder="Session JSON appears here on export; paste one here to replay"></textarea>
-        @if (sessionMsg(); as m) { <p class="sm" [class.err]="!sessionOk()">{{ m }}</p> }
+        <textarea
+          [(ngModel)]="sessionText"
+          rows="6"
+          placeholder="Session JSON appears here on export; paste one here to replay"
+        ></textarea>
+        @if (sessionMsg(); as m) {
+          <p class="sm" [class.err]="!sessionOk()">{{ m }}</p>
+        }
       </section>
 
       <section class="panel">
         <h2>Import / export scenario JSON</h2>
         <p class="dim sm">Imported files are validated before use.</p>
-        <textarea [(ngModel)]="importText" rows="8" placeholder="Paste scenario JSON here"></textarea>
+        <textarea
+          [(ngModel)]="importText"
+          rows="8"
+          placeholder="Paste scenario JSON here"
+        ></textarea>
         <div class="row">
           <button (click)="importScenario()">Validate &amp; import</button>
-          <button (click)="exportCurrent()" [disabled]="!currentJson()">Copy current scenario JSON</button>
+          <button (click)="exportCurrent()" [disabled]="!currentJson()">
+            Copy current scenario JSON
+          </button>
         </div>
-        @if (importMsg(); as m) { <p class="sm" [class.err]="!importOk()">{{ m }}</p> }
+        @if (importMsg(); as m) {
+          <p class="sm" [class.err]="!importOk()">{{ m }}</p>
+        }
       </section>
     </div>
   `,
@@ -220,7 +400,9 @@ export class ScenarioComponent extends ViewBase implements OnInit {
   readonly selectedFile = signal<string | null>(null);
   readonly selectedCustomId = signal<string | null>(null);
   readonly currentJson = signal<string | null>(null);
-  readonly parsedDef = signal<(ScenarioDef & { briefing?: string; description?: string }) | null>(null);
+  readonly parsedDef = signal<(ScenarioDef & { briefing?: string; description?: string }) | null>(
+    null,
+  );
 
   readonly loadMsg = signal('');
   readonly loadOk = signal(true);

@@ -56,6 +56,28 @@ test('the reactor-trip lesson runs its scripted trip and checks objectives', asy
   await expect(hud.locator('li', { hasText: 'Acknowledge all alarms' })).toHaveClass(/done/);
 });
 
+test('the safeguards lesson tracks the automatic loss-of-coolant response', async ({ page }) => {
+  await open(page);
+  await expect(page.locator('app-csf-strip .csf').first()).toBeVisible({ timeout: 20_000 });
+  await page.getByRole('link', { name: 'Learn', exact: true }).click();
+  await page
+    .locator('.lesson', { hasText: 'Loss of coolant and safety injection' })
+    .getByRole('button', { name: /Start lesson/ })
+    .click();
+  await page.getByRole('button', { name: '10×', exact: true }).click();
+
+  const hud = page.locator('app-lesson-hud .hud');
+  await expect(hud).toBeVisible({ timeout: 10_000 });
+  // The break, trip and safety injection are all automatic.
+  await expect(hud.locator('li', { hasText: 'Safety injection actuates' })).toHaveClass(/done/, {
+    timeout: 30_000,
+  });
+  await expect(hud.locator('li', { hasText: 'Containment isolates' })).toHaveClass(/done/);
+
+  // The learn-mode coach recognises the loss of coolant.
+  await expect(page.locator('app-coach-bar .coach')).toContainText(/coolant is being lost/i);
+});
+
 test('a hint can be shown and ending a lesson gives a debrief', async ({ page }) => {
   await open(page);
   await expect(page.locator('app-csf-strip .csf').first()).toBeVisible({ timeout: 20_000 });

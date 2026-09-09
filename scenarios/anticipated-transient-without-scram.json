@@ -1,0 +1,18 @@
+{
+  "id": "anticipated-transient-without-scram",
+  "name": "Anticipated Transient Without Scram (ATWS)",
+  "description": "The turbine trips, the reactor protection system demands a reactor trip - and the control rods fail to insert. Automatic shutdown has not worked. Negative temperature feedback limits the excursion, but the operator must shut the reactor down by another means: the diverse manual scram, and emergency boration.",
+  "initial": "hot_full_power",
+  "seed": 20260911,
+  "briefing": "At t+25 s the turbine trips and an automatic reactor trip is demanded but the rods do not drop (the REACTOR TRIP DEMANDED BUT NOT ACTUATED alarm is your clue). Power stays up with no heat sink. Use the manual reactor trip on the Reactor page, and start emergency boration on the Containment & Safeguards page, to bring the reactor subcritical.",
+  "learning_objectives": [
+    "Recognise a failed automatic scram from the protection alarm and sustained power",
+    "Use diverse actuation: the manual scram works when the automatic path does not",
+    "Use emergency boration as a backup shutdown method",
+    "Understand why defence in depth needs independent, diverse safety functions"
+  ],
+  "events": [
+    { "time": 25, "target": "turbine", "action": "trip", "label": "Turbine trip" },
+    { "time": 25, "target": "rods", "action": "fail", "recover_after": 600, "label": "Control rods fail to insert (ATWS)" }
+  ]
+}

@@ -92,6 +92,16 @@ const TOPICS: Topic[] = [
     ],
   },
   {
+    id: 'cyber',
+    title: 'When the control system is attacked',
+    body: [
+      'Every value you see has passed through instruments, signal processing, the control system and the display. An attacker who reaches any of those layers can make the plant show one thing while it does another.',
+      'The layered fault model makes this concrete: freezing a displayed value leaves control and protection working on the truth; biasing a processed value fools control and display together but the raw channels still agree; moving a control setpoint or injecting an actuator command drives the real plant while the operator sees nothing wrong.',
+      'The defence is the same instinct that catches an instrument fault: never trust one indication alone. Cross-check against independent measurements and against the physics. The safety-function strip is derived from the true instrument values, so it is a good tie-breaker when a gauge looks wrong.',
+      'Diversity is the other defence. A manual scram on a separate path defeats a bypassed automatic trip; an independent annunciator catches a suppressed one. See the cyber scenarios on the Scenario page.',
+    ],
+  },
+  {
     id: 'safeguards',
     title: 'Loss of coolant, safety injection and containment',
     body: [

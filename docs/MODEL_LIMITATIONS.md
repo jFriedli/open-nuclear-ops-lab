@@ -51,6 +51,14 @@ process faults from instrument faults. It is deliberately not accurate.
 - The loss-of-coolant "break" is a single orifice term `∝ area·√pressure`;
   there is no break-location detail, no subcooled/saturated blowdown
   distinction and no two-phase critical flow.
+- A **steam-generator tube rupture** is one orifice term driven by the
+  primary-to-secondary pressure difference; the leaked coolant is added to that
+  SG's lumped inventory and shell pressure. There is no primary/secondary
+  activity balance, no radiological release model, no ruptured-tube count, and
+  no main-steam-isolation-valve model to actually isolate the affected SG.
+- **ATWS** is modelled only as "the rods do not move on an automatic trip".
+  The pressure spike, the detailed moderator-density and boron-worth behaviour,
+  and any positive moderator coefficient are not represented.
 
 ### Balance of plant
 - Turbine is a single lumped stage: no extraction, no moisture separator
@@ -72,6 +80,10 @@ process faults from instrument faults. It is deliberately not accurate.
   coincidence logic, bypasses, or response times.
 - Controllers are simple PI/lead heuristics, not the real plant's control
   system.
+- The **cyber-physical scenarios** ([CYBER.md](./CYBER.md)) are pedagogical
+  abstractions: setpoint tampering, trip suppression, actuator-command injection
+  and alarm suppression are modelled as scenario events, with no exploit code,
+  no protocol or network model, and nothing tied to a real system.
 
 ### Instrumentation
 - Faults available: added noise, fixed bias, linear drift, stuck-at-value,

@@ -1,0 +1,22 @@
+{
+  "id": "cyber-loss-of-view",
+  "name": "Cyber - Loss of View During a Real Event",
+  "description": "An attacker freezes several key displays at their normal values, then trips both main feedwater pumps. The frozen gauges show a healthy plant while steam generator levels really fall. Control, protection and the alarm system all still run on the true measurements, so auxiliary feedwater and the low-low level trip still act - the operator just cannot see why until they stop trusting the frozen indications and work from the alarms, the safety-function strip and the values that are still live.",
+  "initial": "hot_full_power",
+  "seed": 20260915,
+  "briefing": "This is an educational information-security exercise. From t+20 s the primary pressure, pressurizer level, SG-1 level and T-avg indications are frozen. At t+25 s both feedwater pumps trip. Believe the alarms and the safety strip over the gauges. Identify which system is actually in trouble and confirm the automatic responses (auxiliary feedwater, reactor trip) from independent evidence.",
+  "learning_objectives": [
+    "Detect a loss-of-view attack: several unrelated gauges frozen at once, alarms disagreeing",
+    "Fall back to alarms, the safety-function strip, the event log and still-live indications",
+    "Confirm that protection and automatic systems still act on the true measurements",
+    "Diagnose the underlying process fault without the primary displays"
+  ],
+  "events": [
+    { "time": 20, "target": "hmi.primary_pressure", "action": "stuck", "label": "Primary pressure display frozen" },
+    { "time": 20, "target": "hmi.pzr_level", "action": "stuck", "label": "Pressurizer level display frozen" },
+    { "time": 20, "target": "hmi.sg1_level", "action": "stuck", "label": "SG-1 level display frozen" },
+    { "time": 20, "target": "hmi.t_avg", "action": "stuck", "label": "T-avg display frozen" },
+    { "time": 25, "target": "mfw.0", "action": "trip", "label": "Main feedwater pump A trip" },
+    { "time": 25, "target": "mfw.1", "action": "trip", "label": "Main feedwater pump B trip" }
+  ]
+}

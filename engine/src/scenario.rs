@@ -362,6 +362,66 @@ fn apply_event(
                 inputs.boron_rate_ppm_s += ev.value * prog;
             }
         }
+        // Steam-generator tube rupture. `value` = leak size 0..1 (default 0.4).
+        ["sgtr", idx] => {
+            if let Some(i) = parse_idx(idx).filter(|&i| i < 2) {
+                if active {
+                    let size = if ev.value > 0.0 { ev.value } else { 0.4 };
+                    inputs.sgtr[i] = (size * prog).clamp(0.0, 1.0);
+                }
+            }
+        }
+        // Anticipated transient without scram: rods fail to insert automatically.
+        ["rods"] => {
+            if active && matches!(ev.action.as_str(), "fail" | "stuck" | "trip" | "stop") {
+                inputs.rods_fail = true;
+            }
+        }
+        // --- Cyber: protection-layer and setpoint manipulation ---
+        ["protection", "reactor_trip"] => {
+            if active {
+                inputs.inhibit_reactor_trip = !matches!(ev.action.as_str(), "restore" | "clear");
+            }
+        }
+        ["protection", "turbine_trip"] => {
+            if active {
+                inputs.inhibit_turbine_trip = !matches!(ev.action.as_str(), "restore" | "clear");
+            }
+        }
+        ["control", "pzr_setpoint"] => {
+            if active {
+                // Ramp from the nominal 15.5 MPa toward the tampered value.
+                let v = 15.5 + (ev.value - 15.5) * prog;
+                inputs.tamper_pzr_setpoint = Some(v.clamp(10.0, 17.0));
+            }
+        }
+        ["control", "sg_level_setpoint"] => {
+            if active {
+                let v = 65.0 + (ev.value - 65.0) * prog;
+                inputs.tamper_sg_level_setpoint = Some(v.clamp(10.0, 90.0));
+            }
+        }
+        ["control", "rods"] => {
+            if active {
+                let s = crate::physics::MAX_ROD_SPEED;
+                inputs.rod_speed_override = Some(match ev.action.as_str() {
+                    "withdraw" | "start" => s,
+                    "insert" | "stop" => -s,
+                    "hold" => 0.0,
+                    _ => (ev.value).clamp(-s, s),
+                });
+            }
+        }
+        ["alarm", id] => {
+            let id = id.to_string();
+            if active && !matches!(ev.action.as_str(), "restore" | "clear") {
+                if !inputs.inhibit_alarms.contains(&id) {
+                    inputs.inhibit_alarms.push(id);
+                }
+            } else {
+                inputs.inhibit_alarms.retain(|x| *x != id);
+            }
+        }
         ["instrument", rest @ ..] => {
             let target = rest.join(".");
             let sigkey = rest.first().copied().unwrap_or("");

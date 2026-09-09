@@ -212,6 +212,13 @@ pub struct PhysicalState {
     /// Primary coolant lost to containment through a break or relief path
     /// (fraction-of-rated units).
     pub primary_leak: f64,
+    /// Primary-to-secondary leak into each steam generator from a tube rupture
+    /// (fraction-of-rated units). Unlike `primary_leak`, this coolant does not
+    /// reach containment — it goes out via the steam system.
+    pub sgtr_leak: [f64; 2],
+    /// Latches once a steam generator has seen primary-to-secondary leakage:
+    /// its steam is now contaminated and must not be released to atmosphere.
+    pub sg_ruptured: [bool; 2],
 
     // ---- Containment (very simplified) ----
     /// Containment pressure (kPa gauge; ~0 normal).
@@ -295,6 +302,27 @@ pub struct PhysicsInputs {
     pub cnmt_spray_cmd: Option<bool>,
     /// Loss-of-coolant break size (0..1) forced by a scenario event.
     pub loca_break: Option<f64>,
+
+    // ---- Steam-generator tube rupture / ATWS / cyber inputs ----
+    /// Tube-rupture leak size per steam generator (0..1).
+    pub sgtr: [f64; 2],
+    /// Control rods fail to insert on an *automatic* trip demand (ATWS). A
+    /// manual scram from the operator still works.
+    pub rods_fail: bool,
+    /// The operator hit the manual scram button this step (diverse actuation).
+    pub manual_scram: bool,
+    /// Protection trip latches suppressed by a cyber attack. The trip condition
+    /// is still evaluated and logged, but it never actuates.
+    pub inhibit_reactor_trip: bool,
+    pub inhibit_turbine_trip: bool,
+    /// Silently overridden control setpoints (cyber). `None` = untouched.
+    pub tamper_pzr_setpoint: Option<f64>,
+    pub tamper_sg_level_setpoint: Option<f64>,
+    /// Injected control-rod speed command (cyber actuator manipulation),
+    /// fraction of travel per second. `None` = the normal controller runs.
+    pub rod_speed_override: Option<f64>,
+    /// Alarm ids suppressed at the annunciator by a cyber attack.
+    pub inhibit_alarms: Vec<String>,
 }
 
 fn t_sat(pressure_mpa: f64) -> f64 {
@@ -449,6 +477,8 @@ impl PhysicalState {
             accumulator_frac: 1.0,
             si_flow: 0.0,
             primary_leak: 0.0,
+            sgtr_leak: [0.0; 2],
+            sg_ruptured: [false; 2],
             cnmt_pressure: 0.0,
             cnmt_temp: 30.0,
             cnmt_sump: 0.0,
@@ -604,15 +634,18 @@ impl PhysicalState {
         // Relief-valve outsurge also lowers level.
         self.pzr_level -= DT * 6.0 * self.porv;
         // CVCS makeup, safety injection and any loss of coolant.
+        let sgtr_total: f64 = self.sgtr_leak.iter().sum();
         self.pzr_level += DT
             * (2.5 * (self.charging - self.letdown) + 18.0 * self.si_flow
-                - 55.0 * self.primary_leak);
+                - 55.0 * self.primary_leak
+                - 55.0 * sgtr_total);
         self.pzr_level = self.pzr_level.clamp(0.0, 100.0);
         let dp = 1.6 * (self.pzr_heater_frac - 0.25)     // heaters push up
             - 4.0 * self.pzr_spray_frac                  // spray pulls down
             - 9.0 * self.porv                            // relief pulls down
             + 3.5 * self.si_flow                         // injection repressurises
             - 45.0 * self.primary_leak                   // break depressurises
+            - 40.0 * sgtr_total                          // tube rupture depressurises
             + 6.0 * insurge                              // insurge compresses steam bubble
             - 0.30 * (self.primary_pressure - 15.5); // self-restoring bubble
         self.primary_pressure += DT * dp.clamp(-2.5, 2.5);
@@ -627,6 +660,7 @@ impl PhysicalState {
         let afw_cap = if self.afw_on { 0.09 } else { 0.0 };
 
         for k in 0..2 {
+            let sgtr_k = self.sgtr_leak[k];
             let sg = &mut self.sg[k];
             // Steam production (fraction of rated) from primary heat input:
             // ~500 MW per SG at full power.
@@ -641,15 +675,17 @@ impl PhysicalState {
                 (inp.fw_valve_cmd[k].clamp(0.0, 1.2).min(mfw_cap) + afw_cap).clamp(0.0, 1.2);
             sg.fw_flow += DT * (fw_target - sg.fw_flow) / 2.0;
 
-            // Inventory balance (normalized): in - out.
-            sg.inventory += DT * (sg.fw_flow - sg.steam_flow) * 0.02;
+            // Inventory balance (normalized): in - out, plus any tube-rupture
+            // inflow from the primary side.
+            sg.inventory += DT * ((sg.fw_flow - sg.steam_flow) * 0.02 + sgtr_k * 0.9);
             sg.inventory = sg.inventory.clamp(0.0, 1.5);
             // Level (%) with mild shrink/swell on pressure change.
             let swell = (6.9 - sg.pressure) * 1.2;
             sg.level_pct = (20.0 + 45.0 * sg.inventory + swell).clamp(0.0, 100.0);
 
-            // Steam pressure from production vs. removal.
-            let dp = 1.1 * (steam_prod - sg.steam_flow);
+            // Steam pressure from production vs. removal (tube-rupture inflow
+            // also pressurises the shell a little).
+            let dp = 1.1 * (steam_prod - sg.steam_flow) + 6.0 * sgtr_k;
             sg.pressure += DT * dp.clamp(-1.5, 1.5);
             sg.pressure = sg.pressure.clamp(0.5, 9.5);
         }
@@ -874,6 +910,18 @@ impl PhysicalState {
         let break_flow = brk * 0.085 * (self.primary_pressure / 15.5).max(0.05).sqrt();
         self.primary_leak = break_flow + 0.02 * self.porv;
 
+        // Steam-generator tube rupture: primary coolant leaks into a steam
+        // generator's secondary. Driven by the primary-to-secondary pressure
+        // difference, so lowering primary pressure below the SG slows it.
+        for k in 0..2 {
+            let size = inp.sgtr[k].clamp(0.0, 1.0);
+            let dp = (self.primary_pressure - self.sg[k].pressure).max(0.0);
+            self.sgtr_leak[k] = size * 0.030 * (dp / 8.6).max(0.0).sqrt();
+            if self.sgtr_leak[k] > 1e-5 {
+                self.sg_ruptured[k] = true;
+            }
+        }
+
         // Boron mixing: injected borated water pulls concentration toward the
         // source value; the operator can also borate / dilute directly. Normal
         // charging is blended at the current concentration (no net change).
@@ -906,7 +954,7 @@ impl PhysicalState {
     }
 
     fn step_rods(&mut self, inp: &PhysicsInputs) {
-        if inp.reactor_trip && !self.reactor_tripped {
+        if inp.reactor_trip && !self.reactor_tripped && (!inp.rods_fail || inp.manual_scram) {
             self.reactor_tripped = true;
             self.scram_active = true;
         }

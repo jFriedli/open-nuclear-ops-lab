@@ -1,0 +1,17 @@
+{
+  "id": "sg-tube-rupture",
+  "name": "Steam Generator Tube Rupture",
+  "description": "A tube in steam generator 1 fails, so reactor coolant leaks into its secondary side. Primary pressure and pressurizer level fall while SG-1 level and pressure rise abnormally; the reactor trips and safety injection actuates. The affected steam generator now holds contaminated water and must be identified and isolated, and primary pressure lowered to stop the leak.",
+  "initial": "hot_full_power",
+  "seed": 20260910,
+  "briefing": "At t+30 s a tube ruptures in SG-1. Diagnose it: which steam generator is filling on its own while primary pressure and pressurizer level fall? The plant trips as SG-1 overfills. The mitigation is to reduce primary pressure toward the ruptured SG's pressure so the leak stops - then keep that SG isolated because its steam is contaminated.",
+  "learning_objectives": [
+    "Recognise a tube rupture from a diverging primary/secondary inventory picture",
+    "Identify the affected steam generator (abnormal level and pressure rise)",
+    "Manage the trip and watch pressurizer level and safeguards status",
+    "Understand that primary depressurisation, not more injection, stops the leak"
+  ],
+  "events": [
+    { "time": 30, "target": "sgtr.0", "action": "start", "value": 0.65, "duration": 12, "label": "SG-1 tube rupture" }
+  ]
+}

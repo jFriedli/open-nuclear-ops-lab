@@ -167,6 +167,10 @@ pub struct SafetySystemsSummary {
     /// Boron reactivity contribution (pcm; negative).
     pub boron_pcm: f64,
     pub primary_leak_pct: f64,
+    /// Total primary-to-secondary tube-rupture leak (fraction-of-rated, %).
+    pub sgtr_leak_pct: f64,
+    /// Which steam generators have a tube rupture (contaminated steam).
+    pub sg_ruptured: [bool; 2],
     pub cnmt_pressure: f64,
     pub cnmt_temp: f64,
     pub cnmt_sump: f64,
@@ -299,6 +303,8 @@ pub fn build_snapshot<'a>(
         boron_ppm: round4(shown("boron_ppm")),
         boron_pcm: round4(phys.rho_boron * 1e5),
         primary_leak_pct: round4(phys.primary_leak * 100.0),
+        sgtr_leak_pct: round4(phys.sgtr_leak.iter().sum::<f64>() * 100.0),
+        sg_ruptured: phys.sg_ruptured,
         cnmt_pressure: round4(shown("cnmt_pressure")),
         cnmt_temp: round4(shown("cnmt_temp")),
         cnmt_sump: round4(shown("cnmt_sump")),

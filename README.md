@@ -29,14 +29,16 @@ control-system failure from an operator error.**
 | ![Alarm console](docs/screenshots/alarms.png) | ![Trends](docs/screenshots/trends.png) |
 | ![HMI-layer fault](docs/screenshots/hmi-fault.png) | ![Critical Safety Functions](docs/screenshots/safety.png) |
 | ![Containment & safeguards during a LOCA](docs/screenshots/containment.png) | ![Learn-mode coach](docs/screenshots/coach.png) |
+| ![Cyber - protection bypass](docs/screenshots/cyber.png) | ![Control-room walkthrough](docs/screenshots/walkthrough.png) |
 
 ### Highlights
 
 - **Deterministic physics engine** in Rust → WebAssembly, running in a Web
   Worker at 50 Hz. Six-group point kinetics, temperature feedback, decay heat,
   xenon, a two-loop primary with pressuriser, two steam generators, turbine /
-  generator, a simplified electrical system, and a lumped CVCS / boron / safety
-  injection / single-volume containment model for loss-of-coolant events.
+  generator, a simplified electrical system, a lumped CVCS / boron / safety
+  injection / single-volume containment model, and steam-generator tube-rupture
+  and ATWS paths.
 - **Layered by design:** physical process → instrumentation → signal
   processing → control / protection → HMI. Faults inject at any level: a raw
   sensor channel (A/B/C, caught by voting/disagreement), a signal-processing
@@ -44,14 +46,19 @@ control-system failure from an operator error.**
   **HMI-only fault** (the gauge lies but the plant and its automation don't).
   A red *indication-integrity* banner and `hmi_truth` in debug mode make the
   discrepancy visible.
+- **Cyber-physical scenarios** ([docs/CYBER.md](docs/CYBER.md)) — an educational
+  information-security track: setpoint tampering, protection-trip suppression,
+  injected actuator commands and alarm suppression, each with a defensive
+  detect-and-respond angle. No exploit code, no protocol model.
 - **Deterministic session record & replay:** every operator command is taped
   with its simulation tick; export a self-contained session and replay it to
   reproduce the run exactly.
 - **Real alarm model** - latched, prioritised, acknowledgeable, filterable,
   with history. Not toast notifications.
 - **Event / scenario engine** as a first-class subsystem: declarative JSON,
-  13 single-fault + 3 combined scenarios, plus an instructor fault-injection
-  panel. Import your own (validated as untrusted input).
+  ~25 scenarios (initiating events, fault-layer demos, cyber-physical, a
+  cooldown drill), plus an instructor fault-injection panel. Import your own
+  (validated as untrusted input).
 - **Critical Safety Functions** overview derived from multiple signals.
 - **Learn mode vs Challenge mode.** Learn mode adds a contextual coach that
   reads the live plant and tells a newcomer what to do next — start-up,

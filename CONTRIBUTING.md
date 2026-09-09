@@ -37,8 +37,9 @@ cd ../app  && npm run build:wasm && npm test -- --no-watch && npm run build && n
 - A two-region pressuriser model.
 - A multi-compartment containment, or a proper break blowdown model.
 - RWST inventory and recirculation switchover for safety injection.
-- The instrumentation → signal-processing → controller → network → HMI fault
-  chain described in `docs/INSTRUMENTATION.md`.
+- Main-steam isolation valves so a ruptured steam generator can be isolated.
+- A primary/secondary activity balance for the tube-rupture scenario.
+- A network layer for the cyber scenarios (see `docs/CYBER.md`).
 
 ## Style
 

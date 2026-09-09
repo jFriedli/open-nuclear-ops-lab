@@ -57,9 +57,17 @@ pub struct ControllerState {
     pub si_latched: bool,
     pub cnmt_isolation_latched: bool,
     pub cnmt_spray_latched: bool,
+    /// True while a real trip demand is being suppressed by a cyber attack.
+    pub reactor_trip_blocked: bool,
+    pub turbine_trip_blocked: bool,
+    /// Seconds since the reactor trip latched (0 while not tripped).
+    pub trip_age_s: f64,
     // integrator terms
     i_rod: f64,
     i_fw: [f64; 2],
+    // one-shot "blocked trip" log guards
+    rx_block_logged: bool,
+    tb_block_logged: bool,
 }
 
 pub struct Controllers {
@@ -220,13 +228,28 @@ impl Controllers {
         }
 
         if let Some(reason) = rx_trip_reason {
-            if !st.reactor_trip_latched {
+            // A manual trip always goes through; an automatic trip can be
+            // suppressed by a protection-defeat cyber attack.
+            let blocked = scenario_inputs.inhibit_reactor_trip && !op.manual_reactor_trip;
+            st.reactor_trip_blocked = blocked && !st.reactor_trip_latched;
+            if st.reactor_trip_blocked {
+                if !st.rx_block_logged {
+                    st.rx_block_logged = true;
+                    events.push(ProtectionEvent {
+                        kind: "actuation".into(),
+                        reason: format!("Reactor trip demand present but SUPPRESSED: {reason}"),
+                    });
+                }
+            } else if !st.reactor_trip_latched {
                 st.reactor_trip_latched = true;
                 events.push(ProtectionEvent {
                     kind: "reactor_trip".into(),
                     reason,
                 });
             }
+        } else {
+            st.reactor_trip_blocked = false;
+            st.rx_block_logged = false;
         }
 
         // Turbine trip logic.
@@ -245,17 +268,36 @@ impl Controllers {
             turb_trip_reason = Some("High steam generator level".into());
         }
         if let Some(reason) = turb_trip_reason {
-            if !st.turbine_trip_latched {
+            let blocked = scenario_inputs.inhibit_turbine_trip && !op.manual_turbine_trip;
+            st.turbine_trip_blocked = blocked && !st.turbine_trip_latched;
+            if st.turbine_trip_blocked {
+                if !st.tb_block_logged {
+                    st.tb_block_logged = true;
+                    events.push(ProtectionEvent {
+                        kind: "actuation".into(),
+                        reason: format!("Turbine trip demand present but SUPPRESSED: {reason}"),
+                    });
+                }
+            } else if !st.turbine_trip_latched {
                 st.turbine_trip_latched = true;
                 events.push(ProtectionEvent {
                     kind: "turbine_trip".into(),
                     reason,
                 });
             }
+        } else {
+            st.turbine_trip_blocked = false;
+            st.tb_block_logged = false;
         }
 
         out.reactor_trip = st.reactor_trip_latched;
         out.turbine_trip = st.turbine_trip_latched;
+        out.manual_scram = op.manual_reactor_trip;
+        st.trip_age_s = if st.reactor_trip_latched {
+            st.trip_age_s + dt
+        } else {
+            0.0
+        };
 
         // ---------------- ROD CONTROL ----------------------------------------
         if st.reactor_trip_latched {
@@ -285,10 +327,28 @@ impl Controllers {
                 crate::physics::MAX_ROD_SPEED,
             );
         }
+        // A cyber attack can inject a rod-drive command, overriding the
+        // controller (unless the reactor is tripped and the rods are down).
+        if let Some(v) = scenario_inputs.rod_speed_override {
+            if !st.reactor_trip_latched {
+                out.rod_speed_cmd = v.clamp(
+                    -crate::physics::MAX_ROD_SPEED,
+                    crate::physics::MAX_ROD_SPEED,
+                );
+            }
+        }
 
         // ---------------- PRESSURIZER CONTROL -------------------------------
+        // A cyber attack can silently substitute the setpoint the controller
+        // uses; the operator's displayed setpoint is unchanged.
+        let pzr_sp = scenario_inputs
+            .tamper_pzr_setpoint
+            .unwrap_or(op.pzr_setpoint);
+        let sg_lvl_sp = scenario_inputs
+            .tamper_sg_level_setpoint
+            .unwrap_or(op.sg_level_setpoint);
         if st.mode_pzr_auto {
-            let err = op.pzr_setpoint - press;
+            let err = pzr_sp - press;
             st.pzr_press_error = err;
             // Heaters when low, spray when high.
             out.pzr_heater_cmd = (0.25 + 6.0 * err).clamp(0.0, 1.0);
@@ -305,7 +365,7 @@ impl Controllers {
                 (sg2, m.get("sg2_steam_flow"), m.get("sg2_fw_flow"))
             };
             if st.mode_fw_auto {
-                let level_err = op.sg_level_setpoint - lvl;
+                let level_err = sg_lvl_sp - lvl;
                 let flow_mismatch = sf - ff; // want fw to match steam
                 st.fw_error[k] = level_err;
                 st.i_fw[k] += level_err * dt;
@@ -343,7 +403,8 @@ impl Controllers {
         out.si_signal = st.si_latched;
         out.cnmt_isolate_cmd = Some(st.cnmt_isolation_latched);
         out.cnmt_spray_cmd = Some(st.cnmt_spray_latched);
-        out.boron_rate_ppm_s = op.boron_rate;
+        // Operator boration/dilution adds to any scenario-driven rate.
+        out.boron_rate_ppm_s += op.boron_rate;
 
         if st.si_latched {
             // Safety injection overrides normal makeup: charge hard, no letdown.

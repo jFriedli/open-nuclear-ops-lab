@@ -142,5 +142,61 @@
     "description": "A small break opens in the reactor coolant system. Primary pressure and pressurizer level fall despite full charging; the reactor trips on low pressurizer level, safety injection actuates automatically on low primary pressure, coolant is released into containment and containment pressure rises. The operator confirms the safeguards line-up and monitors containment.",
     "initial": "hot_full_power",
     "events": 1
+  },
+  {
+    "file": "sg-tube-rupture.json",
+    "id": "sg-tube-rupture",
+    "name": "Steam Generator Tube Rupture",
+    "description": "A tube in steam generator 1 fails, so reactor coolant leaks into its secondary side. Primary pressure and pressurizer level fall while SG-1 level and pressure rise abnormally; the reactor trips and safety injection actuates. The affected steam generator now holds contaminated water and must be identified and isolated, and primary pressure lowered to stop the leak.",
+    "initial": "hot_full_power",
+    "events": 1
+  },
+  {
+    "file": "anticipated-transient-without-scram.json",
+    "id": "anticipated-transient-without-scram",
+    "name": "Anticipated Transient Without Scram (ATWS)",
+    "description": "The turbine trips, the reactor protection system demands a reactor trip - and the control rods fail to insert. Automatic shutdown has not worked. Negative temperature feedback limits the excursion, but the operator must shut the reactor down by another means: the diverse manual scram, and emergency boration.",
+    "initial": "hot_full_power",
+    "events": 2
+  },
+  {
+    "file": "boron-dilution.json",
+    "id": "boron-dilution",
+    "name": "Inadvertent Boron Dilution",
+    "description": "Unborated water is added to the reactor coolant system, slowly washing out the soluble boron. Boron concentration falls, adding positive reactivity; in automatic rod control the rods drive in to compensate and hold power, so the first sign is falling rod position, not rising power. Left alone, the rods reach their limit and power climbs to the high-power trip.",
+    "initial": "hot_full_power",
+    "events": 1
+  },
+  {
+    "file": "cyber-setpoint-manipulation.json",
+    "id": "cyber-setpoint-manipulation",
+    "name": "Cyber - Setpoint Manipulation",
+    "description": "An attacker with access to the control system silently lowers the pressurizer pressure setpoint and, at the same time, spoofs the displayed primary pressure so it still reads normal. The pressure controller quietly depressurises the plant toward the false setpoint. The operator's pressure gauge and the low-pressure alarm both lie; the truth shows up in the pressurizer level, the safety-injection arming, and eventually a reactor trip the gauge cannot explain.",
+    "initial": "hot_full_power",
+    "events": 3
+  },
+  {
+    "file": "cyber-protection-bypass.json",
+    "id": "cyber-protection-bypass",
+    "name": "Cyber - Protection Bypass and Overpower",
+    "description": "An attacker suppresses the automatic reactor-trip function, then injects a rod-withdrawal command. Reactor power climbs past the high-power trip setpoint and the trip does not act. One thing still works: a separate annunciator reports that a trip was demanded and not actuated. The operator must recognise the defeated protection and trip the reactor by hand.",
+    "initial": "hot_full_power",
+    "events": 2
+  },
+  {
+    "file": "cyber-loss-of-view.json",
+    "id": "cyber-loss-of-view",
+    "name": "Cyber - Loss of View During a Real Event",
+    "description": "An attacker freezes several key displays at their normal values, then trips both main feedwater pumps. The frozen gauges show a healthy plant while steam generator levels really fall. Control, protection and the alarm system all still run on the true measurements, so auxiliary feedwater and the low-low level trip still act - the operator just cannot see why until they stop trusting the frozen indications and work from the alarms, the safety-function strip and the values that are still live.",
+    "initial": "hot_full_power",
+    "events": 6
+  },
+  {
+    "file": "cooldown-drill.json",
+    "id": "cooldown-drill",
+    "name": "Cooldown to Cold Shutdown",
+    "description": "The reactor is tripped at the start. With the plant stable on decay heat, the job is to take it toward cold shutdown: add shutdown margin with boron, then cool and depressurise the primary in a controlled way using the steam dump, pressurizer spray and letdown, keeping a steam generator as the heat sink throughout.",
+    "initial": "hot_full_power",
+    "events": 1
   }
 ]

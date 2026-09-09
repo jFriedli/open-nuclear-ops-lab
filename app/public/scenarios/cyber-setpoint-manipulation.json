@@ -1,0 +1,19 @@
+{
+  "id": "cyber-setpoint-manipulation",
+  "name": "Cyber - Setpoint Manipulation",
+  "description": "An attacker with access to the control system silently lowers the pressurizer pressure setpoint and, at the same time, spoofs the displayed primary pressure so it still reads normal. The pressure controller quietly depressurises the plant toward the false setpoint. The operator's pressure gauge and the low-pressure alarm both lie; the truth shows up in the pressurizer level, the safety-injection arming, and eventually a reactor trip the gauge cannot explain.",
+  "initial": "hot_full_power",
+  "seed": 20260913,
+  "briefing": "This is an educational information-security exercise. From t+30 s the primary pressure indication is frozen near normal and the low-pressure annunciator is suppressed, while the real setpoint has been moved down. Do not trust the pressure gauge alone. Cross-check with pressurizer level, subcooling, safeguards status and the trend of heater/spray demand, decide the plant is really depressurising, and take manual control of the pressurizer.",
+  "learning_objectives": [
+    "Treat a single indication as untrustworthy and confirm with independent ones",
+    "Recognise that control and protection can be driven by a value the operator never sees",
+    "Use pressurizer level, safeguards arming and controller demand as cross-checks",
+    "Understand why setpoint integrity and alarm integrity matter in ICS security"
+  ],
+  "events": [
+    { "time": 30, "target": "control.pzr_setpoint", "action": "set", "value": 13.5, "duration": 70, "label": "Pressurizer pressure setpoint slowly driven to 13.5 MPa" },
+    { "time": 30, "target": "hmi.primary_pressure", "action": "set", "value": 15.5, "label": "Displayed primary pressure spoofed to 15.5 MPa" },
+    { "time": 30, "target": "alarm.PRESS_LO", "action": "inhibit", "label": "Low primary pressure alarm suppressed" }
+  ]
+}

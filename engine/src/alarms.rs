@@ -71,7 +71,13 @@ impl AlarmManager {
         self.history.clear();
     }
 
-    pub fn evaluate(&mut self, now: f64, m: &Instrumentation, cs: &ControllerState) {
+    pub fn evaluate(
+        &mut self,
+        now: f64,
+        m: &Instrumentation,
+        cs: &ControllerState,
+        inhibited: &[String],
+    ) {
         let g = |k: &str| m.get(k);
         let dev = |k: &str| m.deviation(k);
         let conds: Vec<Cond> = vec![
@@ -229,6 +235,37 @@ impl AlarmManager {
                 message: format!("Accumulator inventory low {:.0}%", g("accum_level")),
                 active: g("accum_level") < 35.0,
             },
+            Cond {
+                id: "SGTR",
+                priority: 1,
+                subsystem: "Primary",
+                message: "Primary-to-secondary leak - steam generator tube rupture".into(),
+                active: g("sgtr_leak") > 0.05,
+            },
+            Cond {
+                id: "RX_TRIP_BLOCKED",
+                priority: 1,
+                subsystem: "Protection",
+                message: "REACTOR TRIP DEMANDED BUT NOT ACTUATED".into(),
+                active: cs.reactor_trip_blocked,
+            },
+            Cond {
+                id: "SCRAM_INCOMPLETE",
+                priority: 1,
+                subsystem: "Protection",
+                message: format!(
+                    "Reactor trip actuated - rods NOT inserted ({:.0}% withdrawn)",
+                    g("rod_pos")
+                ),
+                active: cs.reactor_trip_latched && cs.trip_age_s > 6.0 && g("rod_pos") > 15.0,
+            },
+            Cond {
+                id: "TURB_TRIP_BLOCKED",
+                priority: 1,
+                subsystem: "Protection",
+                message: "TURBINE TRIP DEMANDED BUT NOT ACTUATED".into(),
+                active: cs.turbine_trip_blocked,
+            },
             // Instrument channel disagreement (each redundant signal).
             Cond {
                 id: "DEV_NPWR",
@@ -282,6 +319,16 @@ impl AlarmManager {
         ];
 
         for c in conds {
+            // A cyber attack can suppress a specific annunciator window: the
+            // condition is not evaluated and any active alarm is forced quiet.
+            if inhibited.iter().any(|x| x == c.id) {
+                if let Some(a) = self.alarms.get_mut(c.id) {
+                    a.active = false;
+                    a.acknowledged = true;
+                    a.since_change = None;
+                }
+                continue;
+            }
             let entry = self
                 .alarms
                 .entry(c.id.to_string())

@@ -61,6 +61,34 @@ test('the full control-room walkthrough runs end to end', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test('every walkthrough step finds its spotlight target', async ({ page }) => {
+  const errors = collectErrors(page);
+  await page.addInitScript(() =>
+    localStorage.setItem('nol.prefs.v1', JSON.stringify({ onboarded: true, learnMode: true })),
+  );
+  await page.goto('/learn');
+  await page.getByRole('button', { name: /Full control-room walkthrough/ }).click();
+
+  const card = page.locator('app-guide-overlay .card');
+  const ring = page.locator('app-guide-overlay .ring');
+  await expect(card).toBeVisible();
+  const total = Number((await card.locator('.prog').innerText()).split('/')[1].trim());
+
+  let missing = 0;
+  for (let i = 0; i < total; i++) {
+    // Give the route change + spotlight a moment to resolve.
+    await expect(card.locator('p')).not.toHaveText('', { timeout: 5000 });
+    await page.waitForTimeout(250);
+    if ((await ring.count()) === 0) missing++;
+    if (i < total - 1) await card.getByRole('button', { name: 'Next' }).click();
+  }
+  await card.getByRole('button', { name: 'Done' }).click();
+
+  // Every walkthrough step spotlights an anchor; allow one slow frame.
+  expect(missing, `${missing} walkthrough steps had no spotlight target`).toBeLessThanOrEqual(1);
+  expect(errors).toEqual([]);
+});
+
 test('the learn-mode coach explains the plant and gives next steps', async ({ page }) => {
   await page.addInitScript(() =>
     localStorage.setItem('nol.prefs.v1', JSON.stringify({ onboarded: true, learnMode: true })),

@@ -72,6 +72,52 @@ export function coach(s: Snapshot | null): CoachReport {
   }
 
   // ---- Emergencies ---------------------------------------------------------
+  // Automatic shutdown has failed or been defeated: the operator must act.
+  const notShutdown = tripped && c.trip_age_s > 8 && power > 15;
+  if (c.reactor_trip_blocked || notShutdown) {
+    return {
+      level: 'emergency',
+      phase: 'Reactor not shut down',
+      headline: 'The reactor has NOT shut down — trip it by hand now',
+      detail: c.reactor_trip_blocked
+        ? 'A trip was demanded and the automatic system did not act.'
+        : 'The trip signal is in but the rods have not inserted.',
+      steps: [
+        {
+          text: 'Press MANUAL REACTOR TRIP on the Reactor page',
+          page: 'reactor',
+          done: power < 15,
+        },
+        { text: 'Confirm neutron power collapses below 5%', done: power < 5 },
+        { text: 'If power stays up, start emergency boration', page: 'containment' },
+        { text: 'This is why safety functions need diverse, independent actuation' },
+      ],
+    };
+  }
+
+  if (sf.sg_ruptured[0] || sf.sg_ruptured[1]) {
+    const which =
+      sf.sg_ruptured[0] && sf.sg_ruptured[1] ? 'both SGs' : sf.sg_ruptured[0] ? 'SG-1' : 'SG-2';
+    return {
+      level: 'emergency',
+      phase: 'Tube rupture',
+      headline: `Reactor coolant is leaking into ${which} (tube rupture)`,
+      detail: 'That steam generator is filling on its own and its steam is now contaminated.',
+      steps: [
+        {
+          text: `Identify the affected generator: ${which} level and pressure rising`,
+          page: 'secondary',
+        },
+        { text: 'Reactor tripped', done: tripped, page: 'reactor' },
+        {
+          text: 'Lower primary pressure toward the ruptured SG — that is what stops the leak',
+          page: 'primary',
+        },
+        { text: 'Keep the ruptured SG isolated; do not dump its steam to atmosphere' },
+      ],
+    };
+  }
+
   if (!e.essential_bus_energized) {
     return {
       level: 'emergency',
@@ -187,6 +233,21 @@ export function coach(s: Snapshot | null): CoachReport {
   }
 
   // ---- Watch -----------------------------------------------------------
+  const nFaults = s.hmi_faulted.length + s.signal_faulted.length;
+  if (nFaults >= 3 && !tripped) {
+    return {
+      level: 'abnormal',
+      phase: 'Loss of view',
+      headline: 'Several displays are frozen or wrong at once',
+      detail: 'This looks like a deliberate manipulation, not a random fault.',
+      steps: [
+        { text: 'Stop trusting the flagged gauges entirely' },
+        { text: 'Work from the alarms, the safety strip and the values still live' },
+        { text: 'Control, protection and alarms still run on the true measurements' },
+        { text: 'Find the real process fault (check the Event Log)', page: 'eventlog' },
+      ],
+    };
+  }
   if (anyFault && !tripped) {
     return {
       level: 'watch',
@@ -196,7 +257,9 @@ export function coach(s: Snapshot | null): CoachReport {
       steps: [
         { text: 'Do not act on the flagged reading alone' },
         { text: 'Cross-check it against other indications and the safety strip' },
-        { text: 'If the safety strip stays green, the plant itself is probably fine' },
+        {
+          text: 'If a safety function goes amber while the gauge looks fine, believe the safety strip',
+        },
       ],
     };
   }

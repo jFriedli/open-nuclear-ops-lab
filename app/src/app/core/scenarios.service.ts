@@ -34,6 +34,7 @@ export interface ScenarioDef {
 const ALLOWED_ACTIONS = new Set([
   'set', 'ramp', 'trip', 'start', 'stop', 'stuck', 'drift', 'bias', 'noise',
   'fail', 'fail_low', 'fail_high', 'degrade', 'restore', 'clear', 'loss',
+  'inhibit', 'actuate', 'withdraw', 'insert', 'hold',
 ]);
 
 /**

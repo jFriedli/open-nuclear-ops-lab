@@ -39,6 +39,8 @@ export interface SafetySystemsSummary {
   boron_ppm: number;
   boron_pcm: number;
   primary_leak_pct: number;
+  sgtr_leak_pct: number;
+  sg_ruptured: [boolean, boolean];
   cnmt_pressure: number;
   cnmt_temp: number;
   cnmt_sump: number;
@@ -88,6 +90,9 @@ export interface ControllerState {
   si_latched: boolean;
   cnmt_isolation_latched: boolean;
   cnmt_spray_latched: boolean;
+  reactor_trip_blocked: boolean;
+  turbine_trip_blocked: boolean;
+  trip_age_s: number;
 }
 
 export interface SteamGeneratorPhys {
@@ -145,6 +150,8 @@ export interface PhysicalState {
   accumulator_frac: number;
   si_flow: number;
   primary_leak: number;
+  sgtr_leak: [number, number];
+  sg_ruptured: [boolean, boolean];
   cnmt_pressure: number;
   cnmt_temp: number;
   cnmt_sump: number;

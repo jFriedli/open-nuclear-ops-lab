@@ -118,4 +118,14 @@ test('capture documentation screenshots', async ({ page }) => {
   await page.getByRole('link', { name: 'Secondary / Turbine', exact: true }).click();
   await page.waitForTimeout(800);
   await page.screenshot({ path: `${SHOTS}/hmi-fault.png` });
+
+  // Cyber: protection bypass - the coach tells the operator to trip by hand.
+  await page.getByRole('link', { name: 'Scenario / Instructor', exact: true }).click();
+  await page.getByText('Cyber - Protection Bypass and Overpower').click();
+  await page.getByRole('button', { name: /START SCENARIO/ }).click();
+  await page.getByRole('button', { name: '10×', exact: true }).click();
+  await page.waitForTimeout(6000);
+  await page.getByRole('link', { name: 'Reactor', exact: true }).click();
+  await page.waitForTimeout(800);
+  await page.screenshot({ path: `${SHOTS}/cyber.png` });
 });
